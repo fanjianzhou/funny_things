@@ -3,2087 +3,466 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>表情塔罗占卜屋</title>
+    <title>飞跃疯人院</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
+        
         body {
-            background-color: #0a0a0a;
-            color: #d4af37;
+            background-color: #0a0a14;
+            color: #e0e0ff;
             min-height: 100vh;
             overflow-x: hidden;
             position: relative;
         }
-
-        /* 粒子背景 */
+        
+        /* Particles.js 容器 */
         #particles-js {
             position: fixed;
-            width: 100%;
-            height: 100%;
             top: 0;
             left: 0;
-            z-index: -1;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
         }
-
+        
         /* 主容器 */
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* 标题 */
-        header {
-            text-align: center;
-            padding: 20px 0 40px;
-            position: relative;
-        }
-
-        h1 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            text-shadow: 0 0 15px rgba(212, 175, 55, 0.7);
-            letter-spacing: 2px;
-        }
-
-        .subtitle {
-            font-size: 1.2rem;
-            color: #b59a5a;
-            max-width: 800px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-
-        /* 模式切换 */
-        .mode-toggle {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 30px;
-            background: rgba(20, 20, 20, 0.8);
-            border-radius: 50px;
-            padding: 5px;
-            max-width: 800px;
-            margin: 0 auto 40px;
-            border: 1px solid #3a2d0f;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .mode-toggle:hover {
-            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
-        }
-
-        .mode-btn {
-            flex: 1;
-            padding: 14px 20px;
-            background: transparent;
-            border: none;
-            color: #b59a5a;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            position: relative;
-            overflow: hidden;
-            min-width: 0;
-        }
-
-        .mode-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
-            transition: left 0.7s ease;
-        }
-
-        .mode-btn:hover::before {
-            left: 100%;
-        }
-
-        .mode-btn.active {
-            background: linear-gradient(135deg, #d4af37, #a7872b);
-            color: #0a0a0a;
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
-            transform: scale(1.03);
-        }
-
-        .mode-btn:hover:not(.active) {
-            color: #d4af37;
-            transform: translateY(-2px);
-        }
-
-        /* 内容区域 */
-        .content {
-            display: none;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
-
-        .content.active {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* 浏览模式 */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .card {
-            background: rgba(26, 22, 15, 0.9);
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 2px solid #3a2d0f;
-            position: relative;
-            height: 220px;
+            padding: 2rem;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            overflow: hidden;
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), transparent);
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            z-index: 0;
-        }
-
-        .card:hover {
-            transform: translateY(-8px) scale(1.02);
-            border-color: #d4af37;
-            box-shadow: 0 15px 30px rgba(212, 175, 55, 0.4);
-        }
-
-        .card:hover::before {
-            opacity: 1;
-        }
-
-        /* 45度高光效果 */
-        .card::after,
-        .result-card::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transform: rotate(45deg);
-            transition: all 0.6s ease;
-            opacity: 0;
-            z-index: 0;
-        }
-
-        .card:hover::after,
-        .result-card:hover::after {
-            opacity: 1;
-            animation: shine 1.5s ease;
-        }
-
-        @keyframes shine {
-            0% {
-                transform: translateX(-100%) translateY(-100%) rotate(45deg);
-            }
-            100% {
-                transform: translateX(100%) translateY(100%) rotate(45deg);
-            }
-        }
-
-        .card > *,
-        .result-card > * {
+            justify-content: center;
+            align-items: center;
             position: relative;
             z-index: 1;
         }
-
-        .card-number {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #d4af37;
-            text-align: left;
-            margin-bottom: 10px;
+        
+        /* 主标题 */
+        .main-title {
+            font-size: 3.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 800;
+            background: linear-gradient(90deg, #8a2be2, #00bfff, #ff00ff, #8a2be2);
+            background-size: 300% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: shimmer 4s ease-in-out infinite;
+            padding: 0.5rem 1rem;
+            text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
+            position: relative;
         }
-
-        .card-emoji {
-            font-size: 4.5rem;
-            margin: 10px 0;
-            height: 80px;
+        
+        /* 流光动画 */
+        @keyframes shimmer {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* 副标题 */
+        .subtitle {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 4rem;
+            color: #a0a0ff;
+            font-weight: 300;
+            letter-spacing: 1px;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+        
+        .subtitle::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #8a2be2, #00bfff, transparent);
+        }
+        
+        /* 按钮容器 */
+        .buttons-container {
             display: flex;
-            align-items: center;
+            flex-wrap: wrap;
             justify-content: center;
-            filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.5));
+            gap: 2rem;
+            margin: 3rem 0 5rem;
+            width: 100%;
         }
-
-        .card-name {
-            font-size: 1rem;
-            color: #b59a5a;
-            margin-top: 10px;
-            padding: 8px 5px;
-            background: rgba(58, 45, 15, 0.7);
-            border-radius: 6px;
-            line-height: 1.3;
-        }
-
-        /* 抽牌模式 */
-        .drawing-options {
+        
+        /* 按钮样式 */
+        .portal-btn {
+            position: relative;
+            padding: 1.2rem 2.5rem;
+            background: rgba(20, 20, 40, 0.7);
+            border: 1px solid rgba(138, 43, 226, 0.5);
+            border-radius: 8px;
+            color: #c0c0ff;
+            font-size: 1.2rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-decoration: none;
+            text-transform: uppercase;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            min-width: 240px;
+            text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 30px;
-            margin-top: 20px;
-        }
-
-        .draw-mode-selector {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
             justify-content: center;
         }
-
-        .draw-mode {
-            background: rgba(26, 22, 15, 0.9);
-            border: 2px solid #3a2d0f;
-            border-radius: 12px;
-            padding: 20px;
-            width: 180px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+        
+        .portal-btn:hover {
+            transform: translateY(-5px);
+            border-color: #00bfff;
+            box-shadow: 0 10px 25px rgba(0, 191, 255, 0.4);
+            color: #ffffff;
+            background: rgba(30, 30, 60, 0.8);
         }
-
-        .draw-mode::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), transparent);
-            opacity: 0;
-            transition: opacity 0.4s ease;
-        }
-
-        .draw-mode:hover {
-            border-color: #d4af37;
-            transform: translateY(-5px) scale(1.03);
-        }
-
-        .draw-mode:hover::before {
-            opacity: 1;
-        }
-
-        .draw-mode.selected {
-            border-color: #d4af37;
-            background: rgba(212, 175, 55, 0.1);
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
-        }
-
-        .draw-mode i {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            color: #d4af37;
-        }
-
-        .draw-mode h3 {
-            font-size: 1.2rem;
-            margin-bottom: 8px;
-        }
-
-        .draw-mode p {
-            color: #b59a5a;
-            line-height: 1.4;
-            font-size: 0.9rem;
-        }
-
-        .draw-btn {
-            background: linear-gradient(135deg, #d4af37, #a7872b);
-            color: #0a0a0a;
-            border: none;
-            padding: 16px 45px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 8px 20px rgba(212, 175, 55, 0.5);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .draw-btn::before {
+        
+        .portal-btn::before {
             content: '';
             position: absolute;
             top: 0;
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
             transition: left 0.7s ease;
         }
-
-        .draw-btn:hover::before {
+        
+        .portal-btn:hover::before {
             left: 100%;
         }
-
-        .draw-btn:hover {
-            transform: scale(1.08);
-            box-shadow: 0 12px 25px rgba(212, 175, 55, 0.7);
-        }
-
-        .draw-btn:active {
-            transform: scale(0.98);
-        }
-
-        /* 抽牌结果 */
-        .drawing-result {
-            margin-top: 40px;
-            display: none;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
-
-        .drawing-result.active {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .result-title {
-            text-align: center;
+        
+        .btn-icon {
             font-size: 1.8rem;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #3a2d0f;
+            margin-bottom: 0.5rem;
+            color: #8a2be2;
         }
-
-        /* 牌灵结果 */
-        .soul-card-result {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 30px;
+        
+        .portal-btn:hover .btn-icon {
+            color: #00bfff;
+            animation: pulse 1.5s infinite;
         }
-
-        /* 翻牌动画容器 - 只作为出现动画，不可再次点击 */
-        .flip-card {
-            background: transparent;
-            width: 300px;
-            height: 400px;
-            perspective: 1000px;
-            margin: 0 auto 30px;
-            cursor: default;
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
-
-        .flip-card-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            text-align: center;
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-style: preserve-3d;
-            transform: rotateY(180deg);
-        }
-
-        .flip-card-front, .flip-card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 30px;
-        }
-
-        .flip-card-front {
-            background: linear-gradient(135deg, #1a160f, #3a2d0f);
-            border: 3px solid #d4af37;
-            color: #d4af37;
-            box-shadow: 0 15px 35px rgba(212, 175, 55, 0.2);
-        }
-
-        .flip-card-back {
-            background: linear-gradient(135deg, #1a160f, #3a2d0f);
-            border: 3px solid #d4af37;
-            color: #d4af37;
-            transform: rotateY(180deg);
-            box-shadow: 0 15px 35px rgba(212, 175, 55, 0.2);
-        }
-
-        .card-back-pattern {
-            font-size: 5rem;
-            margin-bottom: 20px;
-            opacity: 0.7;
-        }
-
-        .flip-card-emoji {
-            font-size: 6rem;
-            margin: 20px 0;
-        }
-
-        .flip-card-name {
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-        }
-
-        .flip-card-number {
-            font-size: 1.2rem;
-            color: #b59a5a;
-            margin-bottom: 20px;
-        }
-
-        .card-position {
-            display: inline-block;
-            padding: 5px 15px;
-            background: rgba(0, 128, 0, 0.2);
-            border-radius: 20px;
+        
+        .btn-description {
             font-size: 0.9rem;
-            margin-top: 10px;
-            border: 1px solid #4CAF50;
-            color: #a5d6a7;
+            color: #a0a0ff;
+            margin-top: 0.5rem;
+            font-weight: 300;
         }
-
-        .soul-card-description {
-            color: #b59a5a;
-            line-height: 1.6;
-            font-size: 1.1rem;
-            margin-top: 20px;
-            max-width: 600px;
-            text-align: center;
-        }
-
-        /* 结果卡片通用样式 */
-        .result-card {
-            background: rgba(26, 22, 15, 0.9);
-            border-radius: 12px;
-            border: 2px solid #3a2d0f;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 15px;
-            text-align: center;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            height: 100%;
-        }
-
-        .result-card:hover {
-            border-color: #d4af37;
-            transform: translateY(-5px) scale(1.03);
-            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.3);
-        }
-
-        .result-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), transparent);
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            z-index: 0;
-        }
-
-        .result-card:hover::before {
-            opacity: 1;
-        }
-
-        /* 六芒星布局 - 两排三列，与三牌阵同等大小 */
-        .hexagram-layout {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
-            margin: 0 auto;
-            max-width: 1000px;
-            padding: 20px;
-        }
-
-        .hexagram-position {
-            height: 220px;
-        }
-
-        .position-label {
-            background: rgba(58, 45, 15, 0.9);
-            color: #d4af37;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            margin-top: 10px;
-        }
-
-        /* 三牌阵布局 */
-        .three-card-layout {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin: 0 auto;
-            max-width: 1000px;
-            padding: 20px;
-            flex-wrap: wrap;
-        }
-
-        .three-card-position {
-            width: 280px;
-            height: 380px;
-        }
-
-        .three-card-label {
-            background: rgba(58, 45, 15, 0.9);
-            color: #d4af37;
-            padding: 8px 15px;
-            border-radius: 4px;
-            font-size: 1rem;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        /* 阿卡那牌阵布局（四牌） */
-        .arcana-layout {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 30px;
-            margin: 0 auto;
-            max-width: 800px;
-            padding: 20px;
-        }
-
-        .arcana-position {
-            height: 250px;
-        }
-
-        .arcana-label {
-            background: rgba(58, 45, 15, 0.9);
-            color: #d4af37;
-            padding: 8px 15px;
-            border-radius: 4px;
-            font-size: 1rem;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        /* 翻牌动画容器 - 用于牌阵 */
-        .spread-flip-card {
-            background: transparent;
-            width: 100%;
-            height: 100%;
-            perspective: 1000px;
-            cursor: default;
-        }
-
-        .spread-flip-card-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            text-align: center;
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-style: preserve-3d;
-            transform: rotateY(180deg);
-        }
-
-        .spread-flip-front, .spread-flip-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 15px;
-        }
-
-        .spread-flip-front {
-            background: linear-gradient(135deg, #1a160f, #3a2d0f);
-            color: #b59a5a;
-            border: 2px solid #3a2d0f;
-        }
-
-        .spread-flip-front .question-mark {
-            font-size: 3rem;
-            margin-bottom: 10px;
-        }
-
-        .spread-flip-front .position-text {
-            font-size: 0.9rem;
-            color: #d4af37;
-        }
-
-        .spread-flip-back {
-            background: rgba(26, 22, 15, 0.95);
-            border: 2px solid #d4af37;
-            color: #d4af37;
-            transform: rotateY(180deg);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        /* 牌放大模态框 */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.95);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.4s ease;
-        }
-
-        .modal.active {
-            display: flex;
-            opacity: 1;
-        }
-
-        .modal-particles {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            z-index: -1;
-        }
-
-        .modal-content {
-            background: rgba(26, 22, 15, 0.98);
-            border-radius: 20px;
-            padding: 35px;
-            max-width: 550px;
-            width: 90%;
-            border: 3px solid #d4af37;
-            box-shadow: 0 0 50px rgba(212, 175, 55, 0.7);
-            text-align: center;
-            position: relative;
-            transform: scale(0.9);
-            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .modal.active .modal-content {
-            transform: scale(1);
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: none;
-            border: none;
-            color: #d4af37;
-            font-size: 2rem;
-            cursor: pointer;
-            transition: color 0.3s ease;
-            z-index: 10;
-        }
-
-        .modal-close:hover {
-            color: #ffd700;
-            transform: scale(1.1);
-        }
-
-        .modal-emoji {
-            font-size: 7rem;
-            margin: 20px 0;
-            filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.7));
-        }
-
-        .modal-name {
-            font-size: 2.2rem;
-            margin-bottom: 10px;
-        }
-
-        .modal-number {
-            font-size: 1.5rem;
-            color: #b59a5a;
-            margin-bottom: 10px;
-        }
-
-        .modal-position {
-            display: inline-block;
-            padding: 6px 18px;
-            border-radius: 20px;
-            font-size: 1rem;
-            margin-bottom: 25px;
-            font-weight: bold;
-        }
-
-        .modal-position.upright {
-            background: rgba(0, 128, 0, 0.3);
-            border: 1px solid #4CAF50;
-            color: #a5d6a7;
-        }
-
-        .modal-position.reversed {
-            background: rgba(255, 0, 0, 0.3);
-            border: 1px solid #f44336;
-            color: #ffabab;
-        }
-
-        .modal-description {
-            color: #b59a5a;
-            line-height: 1.7;
-            font-size: 1.2rem;
-            text-align: left;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #3a2d0f;
-        }
-
-        /* 重置按钮 */
-        .reset-btn {
-            background: rgba(58, 45, 15, 0.9);
-            color: #d4af37;
-            border: 1px solid #3a2d0f;
-            padding: 14px 30px;
-            font-size: 1.1rem;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 40px auto 0;
-        }
-
-        .reset-btn:hover {
-            background: rgba(212, 175, 55, 0.1);
-            border-color: #d4af37;
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
-        }
-
+        
         /* 页脚 */
-        footer {
+        .footer {
             text-align: center;
-            padding: 30px 0 20px;
-            margin-top: 60px;
-            color: #7a6a3a;
-            border-top: 1px solid #3a2d0f;
+            padding: 2rem;
+            color: #6666aa;
             font-size: 0.9rem;
+            letter-spacing: 1px;
+            position: relative;
+            width: 100%;
+            border-top: 1px solid rgba(138, 43, 226, 0.2);
+            margin-top: auto;
         }
-
+        
+        /* 回顶部按钮 */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: rgba(20, 20, 40, 0.8);
+            border: 1px solid rgba(138, 43, 226, 0.5);
+            border-radius: 50%;
+            color: #a0a0ff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            z-index: 100;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .back-to-top:hover {
+            background: rgba(30, 30, 60, 0.9);
+            color: #00bfff;
+            border-color: #00bfff;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 191, 255, 0.3);
+        }
+        
         /* 响应式设计 */
-        @media (max-width: 1100px) {
-            .card-grid {
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            }
-            
-            .hexagram-layout {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .arcana-layout {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .three-card-layout {
-                gap: 20px;
-            }
-            
-            .three-card-position {
-                width: 250px;
-                height: 350px;
-            }
-            
-            .mode-btn {
-                padding: 12px 15px;
-                font-size: 1rem;
-            }
-            
-            .draw-mode {
-                width: 160px;
-                padding: 15px;
-            }
-            
-            .draw-mode h3 {
-                font-size: 1.1rem;
-            }
-        }
-
         @media (max-width: 768px) {
-            h1 {
-                font-size: 2.2rem;
+            .main-title {
+                font-size: 2.5rem;
             }
             
-            .card-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-                gap: 15px;
+            .subtitle {
+                font-size: 1.2rem;
             }
             
-            .card {
-                height: 200px;
-                padding: 12px;
-            }
-            
-            .card-emoji {
-                font-size: 3.5rem;
-                height: 70px;
-            }
-            
-            .flip-card {
-                width: 250px;
-                height: 350px;
-            }
-            
-            .hexagram-layout {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-            }
-            
-            .arcana-layout {
-                grid-template-columns: 1fr;
-                max-width: 400px;
-            }
-            
-            .three-card-layout {
-                gap: 15px;
-            }
-            
-            .three-card-position {
-                width: 220px;
-                height: 320px;
-            }
-            
-            .mode-toggle {
-                max-width: 500px;
-            }
-            
-            .mode-btn {
-                padding: 10px 12px;
-                font-size: 0.9rem;
-            }
-            
-            .draw-mode-selector {
-                gap: 10px;
-            }
-            
-            .draw-mode {
-                width: 140px;
-                padding: 12px;
-            }
-            
-            .draw-mode i {
-                font-size: 2rem;
-            }
-            
-            .draw-mode h3 {
-                font-size: 1rem;
-            }
-            
-            .draw-mode p {
-                font-size: 0.8rem;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .draw-mode-selector {
+            .buttons-container {
                 flex-direction: column;
                 align-items: center;
             }
             
-            .draw-mode {
-                width: 100%;
-                max-width: 250px;
-            }
-            
-            .mode-toggle {
-                flex-direction: column;
-                gap: 5px;
-                border-radius: 12px;
-                padding: 10px;
-            }
-            
-            .mode-btn {
-                border-radius: 8px;
-                padding: 12px;
-            }
-            
-            .hexagram-layout {
-                grid-template-columns: 1fr;
+            .portal-btn {
+                width: 90%;
                 max-width: 300px;
-            }
-            
-            .arcana-layout {
-                grid-template-columns: 1fr;
-                max-width: 300px;
-            }
-            
-            .three-card-layout {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .three-card-position {
-                width: 100%;
-                max-width: 300px;
-            }
-            
-            .flip-card {
-                width: 220px;
-                height: 320px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- 粒子背景 -->
+    <!-- Particles.js 背景容器 -->
     <div id="particles-js"></div>
     
-    <!-- 主容器 -->
+    <!-- 主内容区 -->
     <div class="container">
-        <!-- 标题 -->
-        <header>
-            <h1><i class="fas fa-crystal-ball"></i> 表情塔罗占卜屋</h1>
-            <p class="subtitle">探索塔罗牌的奥秘，浏览完整的塔罗牌组，或通过抽牌获取个人指引。牌灵揭示你的本质，多种牌阵展开全面解读。</p>
-        </header>
+        <h1 class="main-title">欢迎体验疯人院的奇思妙想</h1>
+        <p class="subtitle">Deepseek打造的小工具合集</p>
         
-        <!-- 模式切换 -->
-        <div class="mode-toggle">
-            <button class="mode-btn active" data-mode="browse">
-                <i class="fas fa-th"></i> 浏览牌组
-            </button>
-            <button class="mode-btn" data-mode="draw">
-                <i class="fas fa-hand-paper"></i> 抽取塔罗牌
-            </button>
+        <!-- 动态按钮区域 -->
+        <div class="buttons-container" id="buttons-container">
+            <!-- 按钮将通过JavaScript动态生成 -->
         </div>
         
-        <!-- 浏览模式 -->
-        <div id="browse-mode" class="content active">
-            <div class="card-grid" id="card-container">
-                <!-- 卡片将通过JS动态生成 -->
-            </div>
-        </div>
-        
-        <!-- 抽牌模式 -->
-        <div id="draw-mode" class="content">
-            <div class="drawing-options">
-                <div class="draw-mode-selector">
-                    <div class="draw-mode selected" data-draw-type="soul">
-                        <i class="fas fa-star-and-crescent"></i>
-                        <h3>抽取牌灵</h3>
-                        <p>抽取一张代表你本质和灵魂的塔罗牌，揭示你的内在特质。</p>
-                    </div>
-                    <div class="draw-mode" data-draw-type="hexagram">
-                        <i class="fas fa-star-of-david"></i>
-                        <h3>六芒星牌阵</h3>
-                        <p>六张牌全面解读过去、现在和未来的各个方面。</p>
-                    </div>
-                    <div class="draw-mode" data-draw-type="three-card">
-                        <i class="fas fa-stream"></i>
-                        <h3>三牌阵</h3>
-                        <p>过去、现在、未来三张牌，解读时间线上的启示。</p>
-                    </div>
-                    <div class="draw-mode" data-draw-type="arcana">
-                        <i class="fas fa-layer-group"></i>
-                        <h3>阿卡那牌阵</h3>
-                        <p>四张牌代表权杖、圣杯、宝剑、星币四元素。</p>
-                    </div>
-                </div>
-                
-                <button class="draw-btn" id="draw-button">
-                    <i class="fas fa-magic"></i> 开始抽牌
-                </button>
-            </div>
-            
-            <!-- 抽牌结果区域 -->
-            <div class="drawing-result" id="drawing-result">
-                <!-- 结果内容将通过JS动态生成 -->
-            </div>
-        </div>
+        <!-- 页脚 -->
+        <footer class="footer">
+            <p>© 2026 飞跃疯人院</p>
+        </footer>
     </div>
     
-    <!-- 牌放大模态框 -->
-    <div class="modal" id="card-modal">
-        <div class="modal-particles" id="modal-particles"></div>
-        <div class="modal-content">
-            <button class="modal-close" id="modal-close">&times;</button>
-            <div class="modal-emoji" id="modal-emoji">🃏</div>
-            <h2 class="modal-name" id="modal-name">愚者</h2>
-            <div class="modal-number" id="modal-number">0号牌</div>
-            <div class="modal-position" id="modal-position">正位</div>
-            <p class="modal-description" id="modal-description"></p>
-        </div>
+    <!-- 回顶部按钮 -->
+    <div class="back-to-top" id="backToTop">
+        <i class="fas fa-chevron-up"></i>
     </div>
-    
-    <!-- 页脚 -->
-    <footer>
-        <p>© 2025 飞跃疯人院</p>
-    </footer>
-    
-    <!-- 引入粒子效果库 -->
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    
+
     <script>
-        // 等待DOM完全加载
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOM已加载，开始初始化应用");
-            
-            // 塔罗牌数据 - 包含正位和逆位解释
-            const tarotCards = [
-                // 大阿卡那 (Major Arcana)
-                { 
-                    number: "0", 
-                    name: "愚者", 
-                    emoji: "🃏", 
-                    upright: "新的开始，天真，冒险，自由精神，无限潜力。", 
-                    reversed: "鲁莽，粗心，风险，不负责任，停滞不前。",
-                    type: "major" 
-                },
-                { 
-                    number: "I", 
-                    name: "魔术师", 
-                    emoji: "🧙‍♂️", 
-                    upright: "创造，技能，意志力，资源运用，沟通能力。", 
-                    reversed: "操纵，欺骗，未使用的潜力，沟通不畅。",
-                    type: "major" 
-                },
-                { 
-                    number: "II", 
-                    name: "女祭司", 
-                    emoji: "👩‍⚖️", 
-                    upright: "直觉，潜意识，神秘，智慧，隐藏的知识。", 
-                    reversed: "隐藏的真相，肤浅，忽视直觉，秘密。",
-                    type: "major" 
-                },
-                { 
-                    number: "III", 
-                    name: "女皇", 
-                    emoji: "👑", 
-                    upright: "丰饶，养育，感性，自然，美丽，富足。", 
-                    reversed: "依赖，停滞，过度放纵，空虚，物质主义。",
-                    type: "major" 
-                },
-                { 
-                    number: "IV", 
-                    name: "皇帝", 
-                    emoji: "👨‍⚖️", 
-                    upright: "权威，结构，控制，稳定，领导力，秩序。", 
-                    reversed: "暴政，僵化，控制欲，缺乏纪律。",
-                    type: "major" 
-                },
-                { 
-                    number: "V", 
-                    name: "教皇", 
-                    emoji: "🙏", 
-                    upright: "信仰，传统，精神指导，道德，团体认同。", 
-                    reversed: "传统束缚，个人信仰，教条，反叛。",
-                    type: "major" 
-                },
-                { 
-                    number: "VI", 
-                    name: "恋人", 
-                    emoji: "💑", 
-                    upright: "爱情，选择，价值观，关系，和谐，结合。", 
-                    reversed: "不和谐，价值观冲突，错误选择，分离。",
-                    type: "major" 
-                },
-                { 
-                    number: "VII", 
-                    name: "战车", 
-                    emoji: "🛡️", 
-                    upright: "意志力，胜利，自律，前进，控制对立力量。", 
-                    reversed: "缺乏方向，侵略，失控，障碍。",
-                    type: "major" 
-                },
-                { 
-                    number: "VIII", 
-                    name: "力量", 
-                    emoji: "💪", 
-                    upright: "勇气，耐心，内在力量，以柔克刚，信心。", 
-                    reversed: "软弱，自我怀疑，滥用力量，恐惧。",
-                    type: "major" 
-                },
-                { 
-                    number: "IX", 
-                    name: "隐士", 
-                    emoji: "🧓", 
-                    upright: "内省，孤独，寻求真理，智慧，精神指引。", 
-                    reversed: "孤立，孤独，拒绝帮助，迷失方向。",
-                    type: "major" 
-                },
-                { 
-                    number: "X", 
-                    name: "命运之轮", 
-                    emoji: "🔄", 
-                    upright: "命运，转折点，机遇，循环，不可控的变化。", 
-                    reversed: "坏运气，抵抗变化，延迟，外部控制。",
-                    type: "major" 
-                },
-                { 
-                    number: "XI", 
-                    name: "正义", 
-                    emoji: "⚖️", 
-                    upright: "公平，真理，因果，平衡，法律，决策。", 
-                    reversed: "不公正，偏见，不负责，法律问题。",
-                    type: "major" 
-                },
-                { 
-                    number: "XII", 
-                    name: "倒吊人", 
-                    emoji: "🙃", 
-                    upright: "牺牲，等待，新视角，顺从，精神成长。", 
-                    reversed: "拖延，抗拒牺牲，自私，停滞。",
-                    type: "major" 
-                },
-                { 
-                    number: "XIII", 
-                    name: "死神", 
-                    emoji: "💀", 
-                    upright: "结束，转变，新生，释放，不可避免的变化。", 
-                    reversed: "抗拒变化，停滞，缓慢变化，恐惧结束。",
-                    type: "major" 
-                },
-                { 
-                    number: "XIV", 
-                    name: "节制", 
-                    emoji: "⚗️", 
-                    upright: "平衡，调和，耐心，适度，和谐，融合对立。", 
-                    reversed: "不平衡，极端，缺乏耐心，不和谐。",
-                    type: "major" 
-                },
-                { 
-                    number: "XV", 
-                    name: "恶魔", 
-                    emoji: "👿", 
-                    upright: "束缚，物质主义，无知，欲望，消极模式。", 
-                    reversed: "释放，克服束缚，精神觉醒，摆脱物质。",
-                    type: "major" 
-                },
-                { 
-                    number: "XVI", 
-                    name: "高塔", 
-                    emoji: "⚡", 
-                    upright: "突然变化，启示，崩塌，释放，觉醒。", 
-                    reversed: "害怕变化，灾难避免，延迟崩溃。",
-                    type: "major" 
-                },
-                { 
-                    number: "XVII", 
-                    name: "星星", 
-                    emoji: "⭐", 
-                    upright: "希望，灵感，宁静，信心，精神指引。", 
-                    reversed: "绝望，失望，缺乏信心，迷失方向。",
-                    type: "major" 
-                },
-                { 
-                    number: "XVIII", 
-                    name: "月亮", 
-                    emoji: "🌙", 
-                    upright: "潜意识，恐惧，幻觉，不确定性，隐藏的敌人。", 
-                    reversed: "释放恐惧，真相显现，较少欺骗，清晰。",
-                    type: "major" 
-                },
-                { 
-                    number: "XIX", 
-                    name: "太阳", 
-                    emoji: "☀️", 
-                    upright: "快乐，成功，活力，自信，清晰，积极能量。", 
-                    reversed: "暂时挫折，过度自信，成功延迟，乌云。",
-                    type: "major" 
-                },
-                { 
-                    number: "XX", 
-                    name: "审判", 
-                    emoji: "📯", 
-                    upright: "重生，内省，召唤，宽恕，重大决定。", 
-                    reversed: "自我怀疑，拒绝召唤，害怕改变，延迟。",
-                    type: "major" 
-                },
-                { 
-                    number: "XXI", 
-                    name: "世界", 
-                    emoji: "🌍", 
-                    upright: "完成，成就，旅行，整合，成功，圆满。", 
-                    reversed: "未完成，缺乏成就，延迟，需要更多努力。",
-                    type: "major" 
-                },
-                // 小阿卡那 - 权杖
-                { 
-                    number: "权杖1", 
-                    name: "权杖王牌", 
-                    emoji: "🪵", 
-                    upright: "新计划，能量，创造力，灵感，新事业开始。", 
-                    reversed: "延迟开始，缺乏能量，未实现的潜力。",
-                    type: "minor" 
-                },
-                { 
-                    number: "权杖2", 
-                    name: "权杖二", 
-                    emoji: "🗺️", 
-                    upright: "规划，决策，展望未来，潜在成长，权衡选择。", 
-                    reversed: "不良规划，恐惧决策，缺乏远见。",
-                    type: "minor" 
-                },
-                { 
-                    number: "权杖3", 
-                    name: "权杖三", 
-                    emoji: "⛵", 
-                    upright: "远见，扩张，合作，初步成功，等待成果。", 
-                    reversed: "延迟，挫折，缺乏远见，合作困难。",
-                    type: "minor" 
-                },
-                { 
-                    number: "权杖4", 
-                    name: "权杖四", 
-                    emoji: "🏠", 
-                    upright: "稳定，庆祝，和谐，家，安全感，里程碑。", 
-                    reversed: "不稳定，缺乏庆祝，冲突，家庭问题。",
-                    type: "minor" 
-                },
-                { 
-                    number: "权杖5", 
-                    name: "权杖五", 
-                    emoji: "⚔️", 
-                    upright: "冲突，竞争，辩论，挑战，不同的观点。", 
-                    reversed: "避免冲突，解决争端，内在冲突。",
-                    type: "minor" 
-                },
-                { 
-                    number: "权杖6", 
-                    name: "权杖六", 
-                    emoji: "🎖️", 
-                    upright: "胜利，进步，认可，自信，公开展示。", 
-                    reversed: "失败，缺乏认可，自负，公众丑闻。",
-                    type: "minor" 
-                },
-                { 
-                    number: "权杖7", 
-                    name: "权杖七", 
-                    emoji: "🛡️", 
-                    upright: "勇气，坚持，挑战，防御，捍卫立场。", 
-                    reversed: "放弃，不知所措，防御崩溃。",
-                    type: "minor" 
-                },
-                // 小阿卡那 - 圣杯
-                { 
-                    number: "圣杯1", 
-                    name: "圣杯王牌", 
-                    emoji: "🏆", 
-                    upright: "新感情，直觉，情感开始，敞开内心，爱。", 
-                    reversed: "情感空虚，未实现的感情，拒绝爱。",
-                    type: "minor" 
-                },
-                { 
-                    number: "圣杯2", 
-                    name: "圣杯二", 
-                    emoji: "🤝", 
-                    upright: "伙伴关系，和谐，相互吸引，结合，平等关系。", 
-                    reversed: "不和谐，不平衡的关系，分离。",
-                    type: "minor" 
-                },
-                { 
-                    number: "圣杯3", 
-                    name: "圣杯三", 
-                    emoji: "🎉", 
-                    upright: "庆祝，友谊，创造力，合作，社交活动。", 
-                    reversed: "过度放纵，聚会问题，社交冲突。",
-                    type: "minor" 
-                },
-                { 
-                    number: "圣杯4", 
-                    name: "圣杯四", 
-                    emoji: "🤔", 
-                    upright: "沉思，不满，退缩，重新评估，错过机会。", 
-                    reversed: "新的机会，接受机会，走出舒适区。",
-                    type: "minor" 
-                },
-                { 
-                    number: "圣杯5", 
-                    name: "圣杯五", 
-                    emoji: "😔", 
-                    upright: "失落，悲伤，失望，关注负面，需要接纳。", 
-                    reversed: "接受，寻找希望，从损失中恢复。",
-                    type: "minor" 
-                },
-                { 
-                    number: "圣杯6", 
-                    name: "圣杯六", 
-                    emoji: "🏡", 
-                    upright: "回忆，童年，纯真，馈赠，怀旧，安全。", 
-                    reversed: "活在现在，放下过去，独立成长。",
-                    type: "minor" 
-                },
-                { 
-                    number: "圣杯7", 
-                    name: "圣杯七", 
-                    emoji: "🌈", 
-                    upright: "选择，幻想，白日梦，多种可能，需要决定。", 
-                    reversed: "缺乏选择，明确决定，现实检验。",
-                    type: "minor" 
-                },
-                // 小阿卡那 - 宝剑
-                { 
-                    number: "宝剑1", 
-                    name: "宝剑王牌", 
-                    emoji: "⚔️", 
-                    upright: "突破，清晰，真理，新想法，智力开始。", 
-                    reversed: "混乱，沟通不畅，分析瘫痪。",
-                    type: "minor" 
-                },
-                { 
-                    number: "宝剑2", 
-                    name: "宝剑二", 
-                    emoji: "👁️", 
-                    upright: "僵局，逃避，艰难选择，平衡，需要决定。", 
-                    reversed: "做出决定，释放信息，面对真相。",
-                    type: "minor" 
-                },
-                { 
-                    number: "宝剑3", 
-                    name: "宝剑三", 
-                    emoji: "💔", 
-                    upright: "伤心，痛苦，分离，失望，情感伤害。", 
-                    reversed: "恢复，愈合，从痛苦中学习。",
-                    type: "minor" 
-                },
-                { 
-                    number: "宝剑4", 
-                    name: "宝剑四", 
-                    emoji: "😴", 
-                    upright: "休息，恢复，沉思，暂停，准备继续前进。", 
-                    reversed: "休息结束，重新参与，恢复活力。",
-                    type: "minor" 
-                },
-                { 
-                    number: "宝剑5", 
-                    name: "宝剑五", 
-                    emoji: "😏", 
-                    upright: "冲突，争论，不惜代价取胜，短期胜利。", 
-                    reversed: "解决冲突，妥协，从错误中学习。",
-                    type: "minor" 
-                },
-                { 
-                    number: "宝剑6", 
-                    name: "宝剑六", 
-                    emoji: "🛶", 
-                    upright: "过渡，疗愈，离开困难，朝更好方向前进。", 
-                    reversed: "停滞，无法前进，拒绝帮助。",
-                    type: "minor" 
-                },
-                { 
-                    number: "宝剑7", 
-                    name: "宝剑七", 
-                    emoji: "🦹", 
-                    upright: "欺骗，策略，孤军奋战，秘密计划，不诚实。", 
-                    reversed: "真相暴露，诚实，放弃欺骗策略。",
-                    type: "minor" 
-                },
-                // 小阿卡那 - 星币
-                { 
-                    number: "星币1", 
-                    name: "星币王牌", 
-                    emoji: "💰", 
-                    upright: "新机会，繁荣，安全感，物质开始，投资。", 
-                    reversed: "错失机会，缺乏规划，财务损失。",
-                    type: "minor" 
-                },
-                { 
-                    number: "星币2", 
-                    name: "星币二", 
-                    emoji: "🎪", 
-                    upright: "平衡资源，适应变化，娱乐，多任务处理。", 
-                    reversed: "不平衡，财务管理不善，过度工作。",
-                    type: "minor" 
-                },
-                { 
-                    number: "星币3", 
-                    name: "星币三", 
-                    emoji: "🏗️", 
-                    upright: "合作，学习，技能发展，团队合作，掌握。", 
-                    reversed: "缺乏合作，技能不足，孤立工作。",
-                    type: "minor" 
-                },
-                { 
-                    number: "星币4", 
-                    name: "星币四", 
-                    emoji: "💎", 
-                    upright: "保守，控制，安全，吝啬，固执，稳定。", 
-                    reversed: "慷慨，放开控制，财务自由。",
-                    type: "minor" 
-                },
-                { 
-                    number: "星币5", 
-                    name: "星币五", 
-                    emoji: "🥶", 
-                    upright: "困难，贫困，孤独，艰难时期，需要支持。", 
-                    reversed: "恢复，社区支持，克服困难。",
-                    type: "minor" 
-                },
-                { 
-                    number: "星币6", 
-                    name: "星币六", 
-                    emoji: "🤲", 
-                    upright: "慷慨，慈善，给予与接受，公平，分享财富。", 
-                    reversed: "自私，不平衡的权力，贪婪，债务。",
-                    type: "minor" 
-                },
-                { 
-                    number: "星币7", 
-                    name: "星币七", 
-                    emoji: "🌱", 
-                    upright: "评估，耐心，投资回报，长期计划，等待收获。", 
-                    reversed: "缺乏成果，不耐烦，投资失败。",
-                    type: "minor" 
-                }
-            ];
-            
-            // 六芒星位置说明
-            const hexagramPositions = [
-                { id: 1, label: "过去的影响", description: "代表过去的事件或状况对当前问题的影响" },
-                { id: 2, label: "现在的挑战", description: "代表当前面临的挑战或障碍" },
-                { id: 3, label: "未来的发展", description: "代表未来可能的发展方向或结果" },
-                { id: 4, label: "潜在的原因", description: "代表问题的潜在原因或根本因素" },
-                { id: 5, label: "外界的影响", description: "代表外部环境或他人对问题的影响" },
-                { id: 6, label: "最终的结果", description: "代表最终的结果或问题的解决方案" }
-            ];
-            
-            // 三牌阵位置说明
-            const threeCardPositions = [
-                { id: 1, label: "过去", description: "代表过去的事件或状况对当前的影响" },
-                { id: 2, label: "现在", description: "代表当前的状况和挑战" },
-                { id: 3, label: "未来", description: "代表未来的可能发展和结果" }
-            ];
-            
-            // 阿卡那牌阵位置说明
-            const arcanaPositions = [
-                { id: 1, label: "权杖", description: "代表行动、能量、创造力和激情" },
-                { id: 2, label: "圣杯", description: "代表情感、直觉、关系和内心世界" },
-                { id: 3, label: "宝剑", description: "代表思想、决策、冲突和真理" },
-                { id: 4, label: "星币", description: "代表物质、财富、安全和实际事务" }
-            ];
-            
-            // DOM元素
-            const modeButtons = document.querySelectorAll('.mode-btn');
-            const contents = document.querySelectorAll('.content');
-            const cardContainer = document.getElementById('card-container');
-            const drawModes = document.querySelectorAll('.draw-mode');
-            const drawButton = document.getElementById('draw-button');
-            const drawingResult = document.getElementById('drawing-result');
-            const cardModal = document.getElementById('card-modal');
-            const modalClose = document.getElementById('modal-close');
-            const modalParticles = document.getElementById('modal-particles');
-            
-            // 当前状态
-            let currentMode = 'browse';
-            let currentDrawType = 'soul';
-            let drawnCards = [];
-            let hexagramCards = [];
-            let threeCardSpread = [];
-            let arcanaSpread = [];
-            let modalParticlesInstance = null;
-            
-            // 初始化
-            function init() {
-                console.log("初始化应用");
-                
-                // 初始化粒子背景
-                initParticles();
-                
-                // 生成卡片
-                renderCards();
-                
-                // 设置事件监听器
-                setupEventListeners();
-                
-                console.log("应用初始化完成");
+        // 子页数据数组 - 可以方便地添加或修改
+        const pages = [
+            {
+                title: "表情塔罗牌",
+                url: "/funny_things/ds_tarot.html",
+                icon: "fas fa-flask",
+                description: "进入神秘空间"
+            },
+            {
+                title: "随赛博风铃",
+                url: "/funny_things/ds_chime.html",
+                icon: "fas fa-puzzle-piece",
+                description: "噪音好伙伴"
+            },
+            {
+                title: "Emoji导出器",
+                url: "/funny_things/ds_emoji_render.html",
+                icon: "fas fa-archive",
+                description: "导出Emoji为PNG"
+            },            
+            {
+                title: "图灵斑图",
+                url: "/funny_things/ds_diffusion.html",
+                icon: "fas fa-flask",
+                description: "头皮发麻生成器"
+            },
+            {
+                title: "FM合成器",
+                url: "/funny_things/ds_fmsynth.html",
+                icon: "fas fa-puzzle-piece",
+                description: "用键盘制造噪音！"
             }
+        ];
+        
+        // 动态生成按钮
+        function generateButtons() {
+            const container = document.getElementById('buttons-container');
+            container.innerHTML = '';
             
-            // 初始化粒子背景
-            function initParticles() {
-                console.log("初始化粒子背景");
-                if (typeof particlesJS !== 'undefined') {
-                    particlesJS('particles-js', {
-                        particles: {
-                            number: { value: 80, density: { enable: true, value_area: 800 } },
-                            color: { value: "#d4af37" },
-                            shape: { type: "circle" },
-                            opacity: { value: 0.5, random: true },
-                            size: { value: 3, random: true },
-                            line_linked: {
-                                enable: true,
-                                distance: 150,
-                                color: "#b59a5a",
-                                opacity: 0.2,
-                                width: 1
-                            },
-                            move: {
-                                enable: true,
-                                speed: 1,
-                                direction: "none",
-                                random: true,
-                                straight: false,
-                                out_mode: "out",
-                                bounce: false
-                            }
-                        },
-                        interactivity: {
-                            detect_on: "canvas",
-                            events: {
-                                onhover: { enable: true, mode: "repulse" },
-                                onclick: { enable: true, mode: "push" }
-                            }
-                        },
-                        retina_detect: true
-                    });
-                } else {
-                    console.error("粒子效果库未加载");
-                }
-            }
-            
-            // 初始化模态框粒子背景
-            function initModalParticles() {
-                if (typeof particlesJS !== 'undefined' && modalParticles) {
-                    // 销毁之前的粒子实例
-                    if (modalParticlesInstance) {
-                        modalParticlesInstance.destroy();
-                    }
-                    
-                    modalParticlesInstance = particlesJS('modal-particles', {
-                        particles: {
-                            number: { value: 50, density: { enable: true, value_area: 800 } },
-                            color: { value: "#d4af37" },
-                            shape: { type: "circle" },
-                            opacity: { value: 0.8, random: true },
-                            size: { value: 2, random: true },
-                            line_linked: {
-                                enable: true,
-                                distance: 100,
-                                color: "#ffd700",
-                                opacity: 0.4,
-                                width: 1
-                            },
-                            move: {
-                                enable: true,
-                                speed: 2,
-                                direction: "none",
-                                random: true,
-                                straight: false,
-                                out_mode: "out",
-                                bounce: false
-                            }
-                        },
-                        interactivity: {
-                            detect_on: "canvas",
-                            events: {
-                                onhover: { enable: true, mode: "repulse" },
-                                onclick: { enable: true, mode: "push" }
-                            }
-                        },
-                        retina_detect: true
-                    });
-                }
-            }
-            
-            // 渲染所有卡片
-            function renderCards() {
-                console.log("渲染卡片，总共", tarotCards.length, "张牌");
-                if (!cardContainer) {
-                    console.error("卡片容器未找到");
-                    return;
-                }
+            pages.forEach(page => {
+                const button = document.createElement('a');
+                button.href = page.url;
+                button.className = 'portal-btn';
+                button.target = "_blank";
                 
-                cardContainer.innerHTML = '';
+                button.innerHTML = `
+                    <i class="${page.icon} btn-icon"></i>
+                    <span>${page.title}</span>
+                    <span class="btn-description">${page.description}</span>
+                `;
                 
-                tarotCards.forEach((card, index) => {
-                    const cardElement = document.createElement('div');
-                    cardElement.className = 'card';
-                    cardElement.dataset.index = index;
-                    
-                    cardElement.innerHTML = `
-                        <div class="card-number">${card.number}号牌</div>
-                        <div class="card-emoji">${card.emoji}</div>
-                        <div class="card-name">${card.name}</div>
-                    `;
-                    
-                    cardContainer.appendChild(cardElement);
-                });
-                
-                console.log("卡片渲染完成");
-            }
-            
-            // 设置事件监听器
-            function setupEventListeners() {
-                console.log("设置事件监听器");
-                
-                // 模式切换
-                modeButtons.forEach(button => {
-                    button.addEventListener('click', function() {
-                        const mode = this.dataset.mode;
-                        console.log("切换模式到:", mode);
-                        switchMode(mode);
-                    });
-                });
-                
-                // 抽牌模式选择
-                drawModes.forEach(mode => {
-                    mode.addEventListener('click', function() {
-                        console.log("选择抽牌模式:", this.dataset.drawType);
-                        drawModes.forEach(m => m.classList.remove('selected'));
-                        this.classList.add('selected');
-                        currentDrawType = this.dataset.drawType;
-                    });
-                });
-                
-                // 抽牌按钮
-                if (drawButton) {
-                    drawButton.addEventListener('click', drawCards);
-                } else {
-                    console.error("抽牌按钮未找到");
-                }
-                
-                // 卡片点击事件（事件委托）
-                if (cardContainer) {
-                    cardContainer.addEventListener('click', (e) => {
-                        const cardElement = e.target.closest('.card');
-                        if (cardElement) {
-                            const index = parseInt(cardElement.dataset.index);
-                            console.log("点击卡片，索引:", index);
-                            showCardModal(index, 'upright');
+                container.appendChild(button);
+            });
+        }
+        
+        // 初始化Particles.js星空背景
+        function initParticles() {
+            particlesJS('particles-js', {
+                particles: {
+                    number: {
+                        value: 150,
+                        density: {
+                            enable: true,
+                            value_area: 800
                         }
-                    });
+                    },
+                    color: {
+                        value: "#ffffff"
+                    },
+                    shape: {
+                        type: "circle",
+                        stroke: {
+                            width: 0,
+                            color: "#000000"
+                        }
+                    },
+                    opacity: {
+                        value: 0.5,
+                        random: true,
+                        anim: {
+                            enable: true,
+                            speed: 1,
+                            opacity_min: 0.1,
+                            sync: false
+                        }
+                    },
+                    size: {
+                        value: 3,
+                        random: true,
+                        anim: {
+                            enable: true,
+                            speed: 2,
+                            size_min: 0.1,
+                            sync: false
+                        }
+                    },
+                    line_linked: {
+                        enable: true,
+                        distance: 150,
+                        color: "#8a2be2",
+                        opacity: 0.4,
+                        width: 1
+                    },
+                    move: {
+                        enable: true,
+                        speed: 1,
+                        direction: "none",
+                        random: true,
+                        straight: false,
+                        out_mode: "out",
+                        bounce: false,
+                        attract: {
+                            enable: false,
+                            rotateX: 600,
+                            rotateY: 1200
+                        }
+                    }
+                },
+                interactivity: {
+                    detect_on: "canvas",
+                    events: {
+                        onhover: {
+                            enable: true,
+                            mode: "grab"
+                        },
+                        onclick: {
+                            enable: true,
+                            mode: "push"
+                        },
+                        resize: true
+                    },
+                    modes: {
+                        grab: {
+                            distance: 140,
+                            line_linked: {
+                                opacity: 1
+                            }
+                        },
+                        bubble: {
+                            distance: 400,
+                            size: 40,
+                            duration: 2,
+                            opacity: 8,
+                            speed: 3
+                        },
+                        repulse: {
+                            distance: 200,
+                            duration: 0.4
+                        },
+                        push: {
+                            particles_nb: 4
+                        },
+                        remove: {
+                            particles_nb: 2
+                        }
+                    }
+                },
+                retina_detect: true
+            });
+        }
+        
+        // 回顶部功能
+        function initBackToTop() {
+            const backToTopBtn = document.getElementById('backToTop');
+            
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    backToTopBtn.style.opacity = '1';
+                    backToTopBtn.style.visibility = 'visible';
+                } else {
+                    backToTopBtn.style.opacity = '0';
+                    backToTopBtn.style.visibility = 'hidden';
                 }
-                
-                // 结果卡片点击事件（事件委托）
-                drawingResult.addEventListener('click', (e) => {
-                    // 检查是否是结果卡片
-                    let cardElement = e.target.closest('.result-card');
-                    if (!cardElement) {
-                        cardElement = e.target.closest('[data-index]');
-                    }
-                    
-                    if (cardElement && cardElement.dataset.index) {
-                        const index = parseInt(cardElement.dataset.index);
-                        const position = cardElement.dataset.position || 'upright';
-                        console.log("点击结果卡片，索引:", index, "位置:", position);
-                        showCardModal(index, position);
-                    }
+            });
+            
+            backToTopBtn.addEventListener('click', () => {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
                 });
-                
-                // 模态框关闭
-                if (modalClose) {
-                    modalClose.addEventListener('click', () => {
-                        console.log("关闭模态框");
-                        cardModal.classList.remove('active');
-                    });
-                }
-                
-                // 点击模态框背景关闭
-                cardModal.addEventListener('click', (e) => {
-                    if (e.target === cardModal) {
-                        console.log("点击模态框背景关闭");
-                        cardModal.classList.remove('active');
-                    }
-                });
-                
-                // 重置按钮事件委托
-                document.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('reset-btn') || e.target.closest('.reset-btn')) {
-                        console.log("重置抽牌");
-                        resetDrawing();
-                    }
-                });
-                
-                console.log("事件监听器设置完成");
-            }
+            });
+        }
+        
+        // 初始化所有功能
+        document.addEventListener('DOMContentLoaded', () => {
+            generateButtons();
+            initParticles();
+            initBackToTop();
             
-            // 切换模式
-            function switchMode(mode) {
-                console.log("正在切换模式:", mode);
-                
-                // 更新按钮状态
-                modeButtons.forEach(button => {
-                    if (button.dataset.mode === mode) {
-                        button.classList.add('active');
-                    } else {
-                        button.classList.remove('active');
-                    }
-                });
-                
-                // 更新内容显示
-                contents.forEach(content => {
-                    if (content.id === `${mode}-mode`) {
-                        content.classList.add('active');
-                    } else {
-                        content.classList.remove('active');
-                    }
-                });
-                
-                currentMode = mode;
-                
-                // 如果切换到抽牌模式，重置结果区域
-                if (mode === 'draw') {
-                    console.log("切换到抽牌模式，重置结果区域");
-                    drawingResult.classList.remove('active');
-                    drawingResult.innerHTML = '';
-                }
-            }
+            // 添加页面加载动画
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 1.5s ease';
             
-            // 抽牌
-            function drawCards() {
-                console.log("开始抽牌，模式:", currentDrawType);
-                
-                // 重置之前的结果
-                drawingResult.classList.remove('active');
-                drawingResult.innerHTML = '';
-                
-                // 根据抽牌类型执行不同的抽牌逻辑
-                if (currentDrawType === 'soul') {
-                    drawSoulCard();
-                } else if (currentDrawType === 'hexagram') {
-                    drawHexagramSpread();
-                } else if (currentDrawType === 'three-card') {
-                    drawThreeCardSpread();
-                } else if (currentDrawType === 'arcana') {
-                    drawArcanaSpread();
-                }
-                
-                // 显示结果区域
-                setTimeout(() => {
-                    drawingResult.classList.add('active');
-                }, 100);
-            }
-            
-            // 抽取牌灵 - 只从大阿卡那中抽取，且只抽正位
-            function drawSoulCard() {
-                // 只从大阿卡那中抽取（type为"major"的牌）
-                const majorArcanaCards = tarotCards.filter(card => card.type === "major");
-                
-                // 随机选择一张牌
-                const randomIndex = Math.floor(Math.random() * majorArcanaCards.length);
-                const card = majorArcanaCards[randomIndex];
-                
-                // 获取卡片在原始数组中的索引
-                const originalIndex = tarotCards.findIndex(c => c.number === card.number && c.name === card.name);
-                
-                // 牌灵只抽正位
-                const position = 'upright';
-                const positionText = '正位';
-                const description = card.upright;
-                
-                console.log("抽取到牌灵:", card.name, "位置:", positionText, "原始索引:", originalIndex);
-                
-                // 记录抽到的牌
-                drawnCards = [{...card, position, positionText, description}];
-                
-                // 渲染结果 - 使用翻牌动画
-                drawingResult.innerHTML = `
-                    <h2 class="result-title"><i class="fas fa-star"></i> 你的牌灵</h2>
-                    <div class="soul-card-result">
-                        <div class="flip-card" data-index="${originalIndex}" data-position="${position}">
-                            <div class="flip-card-inner">
-                                <div class="flip-card-front">
-                                    <div class="card-back-pattern">🔮</div>
-                                    <p>你的牌灵正在显现</p>
-                                </div>
-                                <div class="flip-card-back">
-                                    <div class="flip-card-emoji">${card.emoji}</div>
-                                    <h3 class="flip-card-name">${card.name}</h3>
-                                    <div class="flip-card-number">${card.number}号牌</div>
-                                    <div class="card-position ${position}">${positionText}</div>
-                                    <p>这张牌揭示了你的本质和灵魂特质</p>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="soul-card-description">${description}</p>
-                        <button class="reset-btn">
-                            <i class="fas fa-redo"></i> 重新抽取
-                        </button>
-                    </div>
-                `;
-            }
-            
-            // 抽取六芒星牌阵
-            function drawHexagramSpread() {
-                console.log("抽取六芒星牌阵");
-                
-                // 随机选择6张不同的牌（可以包含大小阿卡那）
-                hexagramCards = [];
-                const usedIndices = new Set();
-                
-                while (hexagramCards.length < 6) {
-                    const randomIndex = Math.floor(Math.random() * tarotCards.length);
-                    if (!usedIndices.has(randomIndex)) {
-                        usedIndices.add(randomIndex);
-                        
-                        // 随机决定正位或逆位
-                        const isReversed = Math.random() > 0.5;
-                        const position = isReversed ? 'reversed' : 'upright';
-                        const positionText = isReversed ? '逆位' : '正位';
-                        
-                        hexagramCards.push({
-                            ...tarotCards[randomIndex],
-                            position,
-                            positionText,
-                            description: isReversed ? tarotCards[randomIndex].reversed : tarotCards[randomIndex].upright,
-                            positionIndex: hexagramCards.length + 1
-                        });
-                    }
-                }
-                
-                console.log("抽取到的牌:", hexagramCards.map(c => `${c.name} (${c.positionText})`));
-                
-                // 渲染六芒星布局 - 两排三列
-                drawingResult.innerHTML = `
-                    <h2 class="result-title"><i class="fas fa-star-of-david"></i> 六芒星牌阵</h2>
-                    <div class="hexagram-layout">
-                        ${hexagramCards.map((card, idx) => {
-                            const cardIndex = Array.from(usedIndices)[idx];
-                            return `
-                                <div class="hexagram-position" data-index="${cardIndex}" data-position="${card.position}">
-                                    <div class="spread-flip-card">
-                                        <div class="spread-flip-card-inner">
-                                            <div class="spread-flip-front">
-                                                <div class="question-mark">?</div>
-                                                <div class="position-text">${hexagramPositions[idx].label}</div>
-                                            </div>
-                                            <div class="spread-flip-back">
-                                                <div class="result-card">
-                                                    <div class="card-number">${card.number}</div>
-                                                    <div class="card-emoji">${card.emoji}</div>
-                                                    <div class="card-name">${card.name}</div>
-                                                    <div class="card-position ${card.position}">${card.positionText}</div>
-                                                    <div class="position-label">${hexagramPositions[idx].label}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                    <div style="text-align: center; margin-top: 50px;">
-                        <p style="color: #b59a5a; max-width: 800px; margin: 0 auto 20px; line-height: 1.6;">
-                            六芒星牌阵是一种经典的塔罗牌阵，每张牌代表不同的方面。点击任何一张牌可以查看其详细含义。
-                        </p>
-                        <button class="reset-btn">
-                            <i class="fas fa-redo"></i> 重新抽取
-                        </button>
-                    </div>
-                `;
-            }
-            
-            // 抽取三牌阵
-            function drawThreeCardSpread() {
-                console.log("抽取三牌阵");
-                
-                // 随机选择3张不同的牌（可以包含大小阿卡那）
-                threeCardSpread = [];
-                const usedIndices = new Set();
-                
-                while (threeCardSpread.length < 3) {
-                    const randomIndex = Math.floor(Math.random() * tarotCards.length);
-                    if (!usedIndices.has(randomIndex)) {
-                        usedIndices.add(randomIndex);
-                        
-                        // 随机决定正位或逆位
-                        const isReversed = Math.random() > 0.5;
-                        const position = isReversed ? 'reversed' : 'upright';
-                        const positionText = isReversed ? '逆位' : '正位';
-                        
-                        threeCardSpread.push({
-                            ...tarotCards[randomIndex],
-                            position,
-                            positionText,
-                            description: isReversed ? tarotCards[randomIndex].reversed : tarotCards[randomIndex].upright,
-                            positionIndex: threeCardSpread.length + 1
-                        });
-                    }
-                }
-                
-                console.log("抽取到的牌:", threeCardSpread.map(c => `${c.name} (${c.positionText})`));
-                
-                // 渲染三牌阵布局
-                drawingResult.innerHTML = `
-                    <h2 class="result-title"><i class="fas fa-stream"></i> 三牌阵 - 过去、现在、未来</h2>
-                    <div class="three-card-layout">
-                        ${threeCardSpread.map((card, idx) => {
-                            const cardIndex = Array.from(usedIndices)[idx];
-                            return `
-                                <div class="three-card-position" data-index="${cardIndex}" data-position="${card.position}">
-                                    <div class="spread-flip-card">
-                                        <div class="spread-flip-card-inner">
-                                            <div class="spread-flip-front">
-                                                <div class="question-mark">?</div>
-                                                <div class="position-text">${threeCardPositions[idx].label}</div>
-                                            </div>
-                                            <div class="spread-flip-back">
-                                                <div class="result-card">
-                                                    <div class="card-number">${card.number}</div>
-                                                    <div class="card-emoji">${card.emoji}</div>
-                                                    <div class="card-name">${card.name}</div>
-                                                    <div class="card-position ${card.position}">${card.positionText}</div>
-                                                    <div class="three-card-label">${threeCardPositions[idx].label}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                    <div style="text-align: center; margin-top: 50px;">
-                        <p style="color: #b59a5a; max-width: 800px; margin: 0 auto 20px; line-height: 1.6;">
-                            三牌阵是一种简洁而强大的塔罗牌阵，代表过去、现在和未来的能量流动。点击任何一张牌可以查看其详细含义。
-                        </p>
-                        <button class="reset-btn">
-                            <i class="fas fa-redo"></i> 重新抽取
-                        </button>
-                    </div>
-                `;
-            }
-            
-            // 抽取阿卡那牌阵
-            function drawArcanaSpread() {
-                console.log("抽取阿卡那牌阵");
-                
-                // 随机选择4张不同的牌（可以包含大小阿卡那）
-                arcanaSpread = [];
-                const usedIndices = new Set();
-                
-                while (arcanaSpread.length < 4) {
-                    const randomIndex = Math.floor(Math.random() * tarotCards.length);
-                    if (!usedIndices.has(randomIndex)) {
-                        usedIndices.add(randomIndex);
-                        
-                        // 随机决定正位或逆位
-                        const isReversed = Math.random() > 0.5;
-                        const position = isReversed ? 'reversed' : 'upright';
-                        const positionText = isReversed ? '逆位' : '正位';
-                        
-                        arcanaSpread.push({
-                            ...tarotCards[randomIndex],
-                            position,
-                            positionText,
-                            description: isReversed ? tarotCards[randomIndex].reversed : tarotCards[randomIndex].upright,
-                            positionIndex: arcanaSpread.length + 1
-                        });
-                    }
-                }
-                
-                console.log("抽取到的牌:", arcanaSpread.map(c => `${c.name} (${c.positionText})`));
-                
-                // 渲染阿卡那牌阵布局
-                drawingResult.innerHTML = `
-                    <h2 class="result-title"><i class="fas fa-layer-group"></i> 阿卡那牌阵 - 四元素</h2>
-                    <div class="arcana-layout">
-                        ${arcanaSpread.map((card, idx) => {
-                            const cardIndex = Array.from(usedIndices)[idx];
-                            return `
-                                <div class="arcana-position" data-index="${cardIndex}" data-position="${card.position}">
-                                    <div class="spread-flip-card">
-                                        <div class="spread-flip-card-inner">
-                                            <div class="spread-flip-front">
-                                                <div class="question-mark">?</div>
-                                                <div class="position-text">${arcanaPositions[idx].label}</div>
-                                            </div>
-                                            <div class="spread-flip-back">
-                                                <div class="result-card">
-                                                    <div class="card-number">${card.number}</div>
-                                                    <div class="card-emoji">${card.emoji}</div>
-                                                    <div class="card-name">${card.name}</div>
-                                                    <div class="card-position ${card.position}">${card.positionText}</div>
-                                                    <div class="arcana-label">${arcanaPositions[idx].label}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                    <div style="text-align: center; margin-top: 50px;">
-                        <p style="color: #b59a5a; max-width: 800px; margin: 0 auto 20px; line-height: 1.6;">
-                            阿卡那牌阵代表塔罗牌的四元素：权杖（火）、圣杯（水）、宝剑（风）、星币（土）。点击任何一张牌可以查看其详细含义。
-                        </p>
-                        <button class="reset-btn">
-                            <i class="fas fa-redo"></i> 重新抽取
-                        </button>
-                    </div>
-                `;
-            }
-            
-            // 显示卡片详情模态框
-            function showCardModal(index, position = 'upright') {
-                const card = tarotCards[index];
-                const isReversed = position === 'reversed';
-                const positionText = isReversed ? '逆位' : '正位';
-                const description = isReversed ? card.reversed : card.upright;
-                
-                console.log("显示卡片详情:", card.name, "位置:", positionText);
-                
-                document.getElementById('modal-emoji').textContent = card.emoji;
-                document.getElementById('modal-name').textContent = card.name;
-                document.getElementById('modal-number').textContent = `${card.number}号牌`;
-                document.getElementById('modal-position').textContent = positionText;
-                document.getElementById('modal-position').className = `modal-position ${position}`;
-                document.getElementById('modal-description').textContent = description;
-                
-                // 初始化模态框粒子背景
-                initModalParticles();
-                
-                cardModal.classList.add('active');
-            }
-            
-            // 重置抽牌结果
-            function resetDrawing() {
-                console.log("重置抽牌结果");
-                drawingResult.classList.remove('active');
-                drawingResult.innerHTML = '';
-                drawnCards = [];
-                hexagramCards = [];
-                threeCardSpread = [];
-                arcanaSpread = [];
-            }
-            
-            // 初始化应用
-            init();
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+            }, 100);
         });
     </script>
 </body>
