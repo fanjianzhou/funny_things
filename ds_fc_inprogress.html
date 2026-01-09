@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任天堂FC音乐播放器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+        
+        body {
+            background-color: #e01b24; /* 任天堂红 */
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            border: 8px solid #4a4a4a;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background-color: #4a4a4a;
+            border-bottom: 2px solid #2a2a2a;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-top: 20px;
+        }
+        
+        h1 {
+            color: #e01b24;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 0 #000;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            color: #4a4a4a;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .player-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            background-color: #d0d0d0;
+            padding: 20px;
+            border-radius: 8px;
+            border: 4px solid #4a4a4a;
+        }
+        
+        .control-btn {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            background-color: #e01b24;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 #8b0000;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .control-btn:hover {
+            background-color: #ff2a34;
+            transform: translateY(-2px);
+        }
+        
+        .control-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #8b0000;
+        }
+        
+        .control-btn:disabled {
+            background-color: #a0a0a0;
+            box-shadow: 0 4px 0 #666;
+            cursor: not-allowed;
+        }
+        
+        .file-upload {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .file-label {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            background-color: #4a4a4a;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 #2a2a2a;
+        }
+        
+        .file-label:hover {
+            background-color: #5a5a5a;
+        }
+        
+        .channels {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: #d0d0d0;
+            padding: 20px;
+            border-radius: 8px;
+            border: 4px solid #4a4a4a;
+        }
+        
+        .channels-title {
+            color: #4a4a4a;
+            font-size: 1.4rem;
+            text-align: center;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .channel-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        
+        .channel {
+            flex: 1;
+            min-width: 170px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            border: 2px solid #4a4a4a;
+        }
+        
+        .channel-name {
+            font-weight: bold;
+            color: #4a4a4a;
+            font-size: 1.1rem;
+        }
+        
+        .channel-toggle {
+            position: relative;
+            width: 60px;
+            height: 30px;
+        }
+        
+        .toggle-checkbox {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        .toggle-checkbox:checked + .toggle-slider {
+            background-color: #e01b24;
+        }
+        
+        .toggle-checkbox:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+        
+        .visualization {
+            height: 200px;
+            background-color: #000;
+            border-radius: 8px;
+            border: 4px solid #4a4a4a;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #waveCanvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .speed-control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #d0d0d0;
+            padding: 20px;
+            border-radius: 8px;
+            border: 4px solid #4a4a4a;
+        }
+        
+        .speed-title {
+            color: #4a4a4a;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .speed-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        .speed-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #4a4a4a;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .speed-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 10px;
+            border-radius: 5px;
+            background: #4a4a4a;
+            outline: none;
+        }
+        
+        .speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #e01b24;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .speed-slider::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #e01b24;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            border: none;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            background-color: #4a4a4a;
+            color: #fff;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-weight: bold;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nes-brand {
+            color: #fff;
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .info-panel {
+            background-color: #d0d0d0;
+            padding: 15px;
+            border-radius: 8px;
+            border: 4px solid #4a4a4a;
+            margin-bottom: 15px;
+        }
+        
+        .info-panel h3 {
+            color: #4a4a4a;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .info-panel p {
+            color: #4a4a4a;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        @media (max-width: 768px) {
+            .channel-controls {
+                flex-direction: column;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-btn, .file-label {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .channel {
+                min-width: 100%;
+            }
+        }
+    </style>
+    <!-- 引入 MIDI 解析库 -->
+    <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.28/build/Midi.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>任天堂FC音乐播放器</h1>
+            <div class="subtitle">4声道模拟 | MIDI解析 | 经典红白机音色</div>
+        </header>
+        
+        <div class="info-panel">
+            <h3>使用说明</h3>
+            <p>1. 选择MIDI文件或点击"演示曲"播放示例音乐</p>
+            <p>2. 使用通道开关控制各个音频通道的启用/禁用</p>
+            <p>3. 调整播放速度滑块改变播放倍速</p>
+            <p>4. 下方可视化区域显示各通道的实时波形</p>
+        </div>
+        
+        <div class="player-container">
+            <div class="controls">
+                <button id="playBtn" class="control-btn">播放</button>
+                <button id="pauseBtn" class="control-btn">暂停</button>
+                <button id="stopBtn" class="control-btn">停止</button>
+                
+                <div class="file-upload">
+                    <input type="file" id="fileInput" accept=".mid,.midi">
+                    <label for="fileInput" class="file-label">选择MIDI文件</label>
+                </div>
+                
+                <button id="demoBtn" class="control-btn">演示曲</button>
+            </div>
+            
+            <div class="channels">
+                <div class="channels-title">音频通道控制 (FC标准4通道)</div>
+                <div class="channel-controls">
+                    <div class="channel">
+                        <div class="channel-name">脉冲波 1</div>
+                        <div class="channel-info">主旋律/高音</div>
+                        <label class="channel-toggle">
+                            <input type="checkbox" class="toggle-checkbox" id="pulse1Toggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="channel">
+                        <div class="channel-name">脉冲波 2</div>
+                        <div class="channel-info">和声/伴奏</div>
+                        <label class="channel-toggle">
+                            <input type="checkbox" class="toggle-checkbox" id="pulse2Toggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="channel">
+                        <div class="channel-name">三角波</div>
+                        <div class="channel-info">低音/贝斯</div>
+                        <label class="channel-toggle">
+                            <input type="checkbox" class="toggle-checkbox" id="triangleToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="channel">
+                        <div class="channel-name">噪声</div>
+                        <div class="channel-info">打击乐/效果音</div>
+                        <label class="channel-toggle">
+                            <input type="checkbox" class="toggle-checkbox" id="noiseToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="visualization">
+                <canvas id="waveCanvas"></canvas>
+            </div>
+            
+            <div class="speed-control">
+                <div class="speed-title">播放速度控制</div>
+                <div class="speed-slider-container">
+                    <span class="speed-value" id="speedValue">1.0x</span>
+                    <input type="range" min="0.25" max="2.0" step="0.05" value="1.0" class="speed-slider" id="speedSlider">
+                    <span class="speed-value">2.0x</span>
+                </div>
+            </div>
+            
+            <div class="status" id="status">等待加载MIDI文件...</div>
+        </div>
+    </div>
+    
+    <div class="nes-brand">任天堂® FAMILY COMPUTER 音乐模拟器 (FC标准4声道)</div>
+
+    <script>
+        // 音频上下文和全局变量
+        let audioContext;
+        let audioNodes = [];
+        let isPlaying = false;
+        let currentMIDIFile = null;
+        let playbackSpeed = 1.0;
+        let animationId = null;
+        let currentTime = 0;
+        let startTime = 0;
+        let scheduledNotes = [];
+        let activeNotes = new Map(); // 跟踪活动的音符
+        
+        // 初始化音频上下文
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        // FC音频通道模拟 (4个通道)
+        class FCChannel {
+            constructor(type, frequency = 440) {
+                this.type = type; // pulse1, pulse2, triangle, noise
+                this.frequency = frequency;
+                this.oscillator = null;
+                this.gainNode = null;
+                this.enabled = true;
+                this.activeNotes = new Map(); // 存储活动音符
+                this.waveform = null;
+                
+                this.init();
+            }
+            
+            init() {
+                if (this.gainNode) {
+                    this.gainNode.disconnect();
+                }
+                
+                this.gainNode = audioContext.createGain();
+                this.gainNode.gain.value = 0;
+                this.gainNode.connect(audioContext.destination);
+            }
+            
+            // 创建脉冲波振荡器
+            createPulseOscillator(frequency, dutyCycle = 0.25) {
+                if (this.oscillator) {
+                    this.oscillator.stop();
+                    this.oscillator.disconnect();
+                }
+                
+                // 创建自定义脉冲波
+                const sampleRate = audioContext.sampleRate;
+                const buffer = audioContext.createBuffer(1, sampleRate, sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                const period = sampleRate / frequency;
+                const pulseLength = period * dutyCycle;
+                
+                for (let i = 0; i < sampleRate; i++) {
+                    const positionInPeriod = i % period;
+                    data[i] = positionInPeriod < pulseLength ? 1.0 : -1.0;
+                }
+                
+                this.oscillator = audioContext.createBufferSource();
+                this.oscillator.buffer = buffer;
+                this.oscillator.loop = true;
+                this.oscillator.connect(this.gainNode);
+                this.oscillator.start();
+                
+                return this.oscillator;
+            }
+            
+            // 创建三角波振荡器
+            createTriangleOscillator(frequency) {
+                if (this.oscillator) {
+                    this.oscillator.stop();
+                    this.oscillator.disconnect();
+                }
+                
+                // 创建三角波
+                const sampleRate = audioContext.sampleRate;
+                const buffer = audioContext.createBuffer(1, sampleRate, sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                const period = sampleRate / frequency;
+                
+                for (let i = 0; i < sampleRate; i++) {
+                    const positionInPeriod = i % period;
+                    const normalizedPosition = positionInPeriod / period;
+                    
+                    // 生成三角波
+                    if (normalizedPosition < 0.25) {
+                        data[i] = 4 * normalizedPosition; // 上升
+                    } else if (normalizedPosition < 0.75) {
+                        data[i] = 2 - 4 * normalizedPosition; // 下降
+                    } else {
+                        data[i] = 4 * normalizedPosition - 4; // 上升
+                    }
+                }
+                
+                this.oscillator = audioContext.createBufferSource();
+                this.oscillator.buffer = buffer;
+                this.oscillator.loop = true;
+                this.oscillator.connect(this.gainNode);
+                this.oscillator.start();
+                
+                return this.oscillator;
+            }
+            
+            // 创建噪声
+            createNoise() {
+                // 创建周期噪声（类似FC的噪声通道）
+                const bufferSize = audioContext.sampleRate * 0.5; // 0.5秒的缓冲区
+                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                // 使用伪随机算法生成周期噪声
+                let randomSeed = 1;
+                for (let i = 0; i < bufferSize; i++) {
+                    // 简单的伪随机算法
+                    randomSeed = (randomSeed * 1103515245 + 12345) & 0x7fffffff;
+                    data[i] = (randomSeed & 1) ? 0.5 : -0.5;
+                }
+                
+                if (this.oscillator) {
+                    this.oscillator.stop();
+                    this.oscillator.disconnect();
+                }
+                
+                this.oscillator = audioContext.createBufferSource();
+                this.oscillator.buffer = buffer;
+                this.oscillator.loop = true;
+                this.oscillator.connect(this.gainNode);
+                this.oscillator.start();
+            }
+            
+            playNote(noteId, frequency, volume = 0.5, startTime = 0) {
+                if (!this.enabled) return null;
+                
+                const currentTime = audioContext.currentTime;
+                const playStartTime = currentTime + startTime;
+                
+                // 创建振荡器
+                let oscillator;
+                if (this.type === 'pulse1') {
+                    oscillator = this.createPulseOscillator(frequency, 0.25);
+                } else if (this.type === 'pulse2') {
+                    oscillator = this.createPulseOscillator(frequency, 0.5);
+                } else if (this.type === 'triangle') {
+                    oscillator = this.createTriangleOscillator(frequency);
+                } else if (this.type === 'noise') {
+                    this.createNoise();
+                    oscillator = this.oscillator;
+                }
+                
+                if (!oscillator) return null;
+                
+                // 创建增益节点
+                const gainNode = audioContext.createGain();
+                gainNode.gain.value = 0;
+                gainNode.connect(this.gainNode);
+                
+                oscillator.disconnect();
+                oscillator.connect(gainNode);
+                
+                // 设置音量包络
+                gainNode.gain.cancelScheduledValues(playStartTime);
+                gainNode.gain.setValueAtTime(0, playStartTime);
+                gainNode.gain.linearRampToValueAtTime(volume, playStartTime + 0.01);
+                
+                // 存储活动音符
+                this.activeNotes.set(noteId, {
+                    oscillator: oscillator,
+                    gainNode: gainNode,
+                    frequency: frequency,
+                    startTime: playStartTime
+                });
+                
+                return {
+                    oscillator: oscillator,
+                    gainNode: gainNode,
+                    noteId: noteId
+                };
+            }
+            
+            stopNote(noteId, stopTime = 0) {
+                if (!this.activeNotes.has(noteId)) return;
+                
+                const note = this.activeNotes.get(noteId);
+                const currentTime = audioContext.currentTime;
+                const stopAtTime = currentTime + stopTime;
+                
+                // 设置释放包络
+                note.gainNode.gain.cancelScheduledValues(stopAtTime);
+                note.gainNode.gain.setValueAtTime(note.gainNode.gain.value, stopAtTime);
+                note.gainNode.gain.exponentialRampToValueAtTime(0.001, stopAtTime + 0.05);
+                
+                // 安排振荡器停止
+                setTimeout(() => {
+                    if (note.oscillator) {
+                        note.oscillator.stop();
+                        note.oscillator.disconnect();
+                    }
+                    note.gainNode.disconnect();
+                }, (stopAtTime + 0.05 - currentTime) * 1000);
+                
+                this.activeNotes.delete(noteId);
+            }
+            
+            setEnabled(enabled) {
+                this.enabled = enabled;
+                if (!enabled) {
+                    // 禁用时停止所有音符
+                    this.activeNotes.forEach((note, noteId) => {
+                        this.stopNote(noteId, 0);
+                    });
+                }
+            }
+            
+            // 停止所有音符
+            stopAllNotes() {
+                this.activeNotes.forEach((note, noteId) => {
+                    this.stopNote(noteId, 0);
+                });
+            }
+        }
+        
+        // 初始化FC音频通道 (4个通道)
+        function initChannels() {
+            audioNodes = [
+                new FCChannel('pulse1'),
+                new FCChannel('pulse2'),
+                new FCChannel('triangle'),
+                new FCChannel('noise')
+            ];
+        }
+        
+        // 使用Tone.js MIDI库解析MIDI文件
+        async function parseMIDI(arrayBuffer) {
+            try {
+                const midi = new Midi(arrayBuffer);
+                
+                // 提取所有音符事件
+                const events = [];
+                let totalTime = 0;
+                
+                // 处理每个音轨
+                midi.tracks.forEach((track, trackIndex) => {
+                    // 获取音轨名称
+                    const trackName = track.name || `音轨 ${trackIndex + 1}`;
+                    
+                    // 处理音符
+                    track.notes.forEach(note => {
+                        // 将MIDI音符映射到FC通道
+                        // 通道映射策略：
+                        // 通道0: 旋律 (高音) -> 脉冲波1
+                        // 通道1: 和声 (中音) -> 脉冲波2
+                        // 通道2: 低音 -> 三角波
+                        // 通道9 (打击乐): -> 噪声通道
+                        // 其他通道: 根据音高分配到可用通道
+                        
+                        let channelIndex;
+                        const midiChannel = note.midi || 0;
+                        
+                        if (midiChannel === 9) {
+                            // 打击乐通道 -> 噪声
+                            channelIndex = 3;
+                        } else {
+                            // 根据音高分配通道
+                            if (note.midi >= 60) {
+                                // 高音 -> 脉冲波1
+                                channelIndex = 0;
+                            } else if (note.midi >= 48) {
+                                // 中音 -> 脉冲波2
+                                channelIndex = 1;
+                            } else {
+                                // 低音 -> 三角波
+                                channelIndex = 2;
+                            }
+                        }
+                        
+                        // 创建noteOn事件
+                        events.push({
+                            type: 'noteOn',
+                            note: note.midi,
+                            channel: channelIndex,
+                            time: note.time,
+                            duration: note.duration,
+                            velocity: note.velocity,
+                            trackName: trackName
+                        });
+                        
+                        // 更新总时间
+                        const noteEndTime = note.time + note.duration;
+                        if (noteEndTime > totalTime) {
+                            totalTime = noteEndTime;
+                        }
+                    });
+                });
+                
+                // 按时间排序事件
+                events.sort((a, b) => a.time - b.time);
+                
+                return {
+                    name: midi.name || 'MIDI文件',
+                    tracks: midi.tracks.length,
+                    events: events,
+                    totalTime: totalTime,
+                    midiData: midi
+                };
+            } catch (error) {
+                console.error('MIDI解析错误:', error);
+                throw new Error('无法解析MIDI文件: ' + error.message);
+            }
+        }
+        
+        // 播放MIDI文件
+        async function playMIDI(midiData) {
+            if (!audioContext) {
+                initAudio();
+            }
+            
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+            
+            stopPlayback();
+            
+            currentMIDIFile = midiData;
+            isPlaying = true;
+            startTime = audioContext.currentTime;
+            currentTime = 0;
+            
+            updateStatus(`播放中: ${midiData.name}`);
+            
+            // 安排所有MIDI事件
+            scheduleMIDIEvents(midiData.events);
+            
+            // 开始可视化
+            startVisualization();
+        }
+        
+        // 安排MIDI事件
+        function scheduleMIDIEvents(events) {
+            activeNotes.clear();
+            scheduledNotes = [];
+            
+            // 生成唯一的noteId
+            let noteIdCounter = 0;
+            
+            events.forEach(event => {
+                if (event.type === 'noteOn') {
+                    const scheduledTime = startTime + (event.time / playbackSpeed);
+                    const duration = event.duration / playbackSpeed;
+                    
+                    // 将MIDI音符转换为频率
+                    const frequency = midiNoteToFrequency(event.note);
+                    
+                    // 获取通道
+                    const channelIndex = event.channel % 4; // 确保不超过4个通道
+                    const channel = audioNodes[channelIndex];
+                    
+                    // 生成唯一noteId
+                    const noteId = noteIdCounter++;
+                    
+                    // 安排音符播放
+                    const startDelay = scheduledTime - audioContext.currentTime;
+                    if (startDelay >= 0) {
+                        const note = channel.playNote(noteId, frequency, event.velocity, startDelay);
+                        
+                        if (note) {
+                            // 记录活动音符
+                            activeNotes.set(noteId, {
+                                channel: channelIndex,
+                                note: event.note,
+                                startTime: scheduledTime,
+                                endTime: scheduledTime + duration,
+                                noteObject: note
+                            });
+                            
+                            // 安排音符停止
+                            setTimeout(() => {
+                                if (activeNotes.has(noteId)) {
+                                    channel.stopNote(noteId, 0);
+                                    activeNotes.delete(noteId);
+                                }
+                            }, (scheduledTime + duration - audioContext.currentTime) * 1000);
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 将MIDI音符编号转换为频率
+        function midiNoteToFrequency(note) {
+            return 440 * Math.pow(2, (note - 69) / 12);
+        }
+        
+        // 停止播放
+        function stopPlayback() {
+            isPlaying = false;
+            
+            // 停止所有通道的音符
+            audioNodes.forEach(channel => {
+                channel.stopAllNotes();
+            });
+            
+            // 清除活动音符
+            activeNotes.clear();
+            
+            // 停止可视化
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            
+            // 清除画布
+            const canvas = document.getElementById('waveCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            currentTime = 0;
+            updateStatus('已停止');
+        }
+        
+        // 暂停播放
+        function pausePlayback() {
+            if (isPlaying) {
+                isPlaying = false;
+                
+                if (audioContext) {
+                    audioContext.suspend();
+                }
+                
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+                
+                updateStatus('已暂停');
+            }
+        }
+        
+        // 继续播放
+        async function resumePlayback() {
+            if (!isPlaying && currentMIDIFile) {
+                isPlaying = true;
+                
+                if (audioContext) {
+                    await audioContext.resume();
+                }
+                
+                startTime = audioContext.currentTime - currentTime / playbackSpeed;
+                
+                // 重新安排尚未播放的事件
+                const remainingEvents = currentMIDIFile.events.filter(event => 
+                    event.time / playbackSpeed > currentTime
+                );
+                
+                if (remainingEvents.length > 0) {
+                    scheduleMIDIEvents(remainingEvents);
+                }
+                
+                startVisualization();
+                updateStatus('播放中');
+            }
+        }
+        
+        // 开始可视化
+        function startVisualization() {
+            const canvas = document.getElementById('waveCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 设置画布尺寸
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            function draw() {
+                if (!isPlaying) return;
+                
+                // 计算当前播放时间
+                if (audioContext) {
+                    currentTime = (audioContext.currentTime - startTime) * playbackSpeed;
+                }
+                
+                // 清除画布
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制背景
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制网格
+                ctx.strokeStyle = '#222';
+                ctx.lineWidth = 1;
+                
+                // 水平线
+                for (let i = 0; i <= 10; i++) {
+                    const y = (canvas.height / 10) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+                
+                // 垂直线
+                for (let i = 0; i <= 20; i++) {
+                    const x = (canvas.width / 20) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                
+                // 绘制每个通道的波形
+                const channelColors = ['#e01b24', '#ff6b6b', '#4ecdc4', '#45b7d1'];
+                const channelNames = ['脉冲波1', '脉冲波2', '三角波', '噪声'];
+                
+                audioNodes.forEach((channel, index) => {
+                    const color = channelColors[index];
+                    const centerY = (canvas.height / 5) * (index + 0.5);
+                    const amplitude = (canvas.height / 5) * 0.3;
+                    
+                    // 绘制通道名称和状态
+                    ctx.fillStyle = color;
+                    ctx.font = '12px monospace';
+                    
+                    const channelStatus = channel.enabled ? '启用' : '禁用';
+                    ctx.fillText(`${channelNames[index]} (${channelStatus})`, 10, centerY - amplitude - 5);
+                    
+                    // 绘制波形
+                    ctx.beginPath();
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2;
+                    
+                    const timeOffset = currentTime * 20;
+                    
+                    for (let x = 0; x < canvas.width; x++) {
+                        // 基于通道类型和频率生成波形
+                        let y;
+                        const time = (x / canvas.width) * 20 + timeOffset;
+                        
+                        if (channel.type === 'noise') {
+                            // 噪声通道
+                            y = centerY + (Math.random() * 2 - 1) * amplitude;
+                        } else {
+                            // 其他通道使用正弦波
+                            const frequency = 2 + index * 0.5; // 每个通道有不同的基础频率
+                            y = centerY + Math.sin(time * frequency) * amplitude;
+                            
+                            // 如果是脉冲波，使其更方
+                            if (channel.type === 'pulse1' || channel.type === 'pulse2') {
+                                const dutyCycle = channel.type === 'pulse1' ? 0.25 : 0.5;
+                                const phase = (time * frequency) % 1;
+                                y = centerY + (phase < dutyCycle ? amplitude : -amplitude) * 0.8;
+                            }
+                            
+                            // 如果是三角波，使其更三角
+                            if (channel.type === 'triangle') {
+                                const phase = (time * frequency) % 1;
+                                if (phase < 0.25) {
+                                    y = centerY + (phase * 4) * amplitude;
+                                } else if (phase < 0.75) {
+                                    y = centerY + (2 - phase * 4) * amplitude;
+                                } else {
+                                    y = centerY + (phase * 4 - 4) * amplitude;
+                                }
+                            }
+                        }
+                        
+                        if (x === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    
+                    ctx.stroke();
+                    
+                    // 如果通道有活动音符，绘制活动指示器
+                    if (channel.activeNotes.size > 0) {
+                        ctx.fillStyle = '#ffeb3b';
+                        ctx.beginPath();
+                        ctx.arc(canvas.width - 15, centerY - amplitude - 5, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+                
+                // 绘制时间指示器
+                if (currentMIDIFile) {
+                    const progress = Math.min(currentTime / currentMIDIFile.totalTime, 1);
+                    const progressX = canvas.width * progress;
+                    
+                    ctx.strokeStyle = '#ffeb3b';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(progressX, 0);
+                    ctx.lineTo(progressX, canvas.height);
+                    ctx.stroke();
+                    
+                    // 显示时间和活动音符数
+                    ctx.fillStyle = '#ffeb3b';
+                    ctx.font = '14px monospace';
+                    ctx.fillText(`时间: ${currentTime.toFixed(1)}s / ${currentMIDIFile.totalTime.toFixed(1)}s`, canvas.width - 200, 20);
+                    ctx.fillText(`活动音符: ${activeNotes.size}`, canvas.width - 200, 40);
+                }
+                
+                animationId = requestAnimationFrame(draw);
+            }
+            
+            draw();
+        }
+        
+        // 更新状态显示
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+        
+        // 加载演示MIDI数据
+        async function loadDemoMIDI() {
+            // 创建一个简单的演示MIDI数据
+            // 这里我们创建一个包含简单旋律的MIDI数据
+            const demoNotes = [
+                { note: 60, time: 0, duration: 0.5, velocity: 100, channel: 0 }, // C4
+                { note: 62, time: 0.5, duration: 0.5, velocity: 100, channel: 0 }, // D4
+                { note: 64, time: 1.0, duration: 0.5, velocity: 100, channel: 0 }, // E4
+                { note: 65, time: 1.5, duration: 0.5, velocity: 100, channel: 0 }, // F4
+                { note: 67, time: 2.0, duration: 1.0, velocity: 100, channel: 0 }, // G4
+                { note: 65, time: 3.0, duration: 0.5, velocity: 100, channel: 0 }, // F4
+                { note: 64, time: 3.5, duration: 0.5, velocity: 100, channel: 0 }, // E4
+                { note: 62, time: 4.0, duration: 0.5, velocity: 100, channel: 0 }, // D4
+                { note: 60, time: 4.5, duration: 1.5, velocity: 100, channel: 0 }, // C4
+                
+                // 和声
+                { note: 48, time: 0, duration: 1.0, velocity: 80, channel: 1 }, // C3
+                { note: 50, time: 1.0, duration: 1.0, velocity: 80, channel: 1 }, // D3
+                { note: 52, time: 2.0, duration: 2.0, velocity: 80, channel: 1 }, // E3
+                { note: 53, time: 4.0, duration: 2.0, velocity: 80, channel: 1 }, // F3
+                
+                // 低音
+                { note: 36, time: 0, duration: 2.0, velocity: 90, channel: 2 }, // C2
+                { note: 38, time: 2.0, duration: 2.0, velocity: 90, channel: 2 }, // D2
+                { note: 40, time: 4.0, duration: 2.0, velocity: 90, channel: 2 }, // E2
+                
+                // 打击乐（噪声通道）
+                { note: 42, time: 0, duration: 0.25, velocity: 100, channel: 3 }, // 踩镲
+                { note: 36, time: 0.5, duration: 0.25, velocity: 100, channel: 3 }, // 低音鼓
+                { note: 42, time: 1.0, duration: 0.25, velocity: 100, channel: 3 }, // 踩镲
+                { note: 38, time: 1.5, duration: 0.25, velocity: 100, channel: 3 }, // 军鼓
+                { note: 42, time: 2.0, duration: 0.25, velocity: 100, channel: 3 }, // 踩镲
+                { note: 36, time: 2.5, duration: 0.25, velocity: 100, channel: 3 }, // 低音鼓
+                { note: 42, time: 3.0, duration: 0.25, velocity: 100, channel: 3 }, // 踩镲
+                { note: 38, time: 3.5, duration: 0.25, velocity: 100, channel: 3 }, // 军鼓
+                { note: 42, time: 4.0, duration: 0.25, velocity: 100, channel: 3 }, // 踩镲
+                { note: 36, time: 4.5, duration: 0.25, velocity: 100, channel: 3 }, // 低音鼓
+                { note: 42, time: 5.0, duration: 0.25, velocity: 100, channel: 3 }, // 踩镲
+                { note: 38, time: 5.5, duration: 0.25, velocity: 100, channel: 3 }, // 军鼓
+            ];
+            
+            const demoEvents = demoNotes.map(note => ({
+                type: 'noteOn',
+                note: note.note,
+                channel: note.channel,
+                time: note.time,
+                duration: note.duration,
+                velocity: note.velocity,
+                trackName: '演示曲'
+            }));
+            
+            return {
+                name: 'FC演示曲',
+                tracks: 1,
+                events: demoEvents,
+                totalTime: 6.0
+            };
+        }
+        
+        // DOM事件处理
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 初始化音频
+            initAudio();
+            initChannels();
+            
+            // 获取DOM元素
+            const playBtn = document.getElementById('playBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const fileInput = document.getElementById('fileInput');
+            const demoBtn = document.getElementById('demoBtn');
+            const speedSlider = document.getElementById('speedSlider');
+            const speedValue = document.getElementById('speedValue');
+            
+            // 获取通道切换开关
+            const pulse1Toggle = document.getElementById('pulse1Toggle');
+            const pulse2Toggle = document.getElementById('pulse2Toggle');
+            const triangleToggle = document.getElementById('triangleToggle');
+            const noiseToggle = document.getElementById('noiseToggle');
+            
+            // 播放按钮事件
+            playBtn.addEventListener('click', async () => {
+                if (!isPlaying) {
+                    if (currentMIDIFile) {
+                        await resumePlayback();
+                    } else {
+                        // 如果没有加载MIDI文件，加载演示曲
+                        const demoMIDI = await loadDemoMIDI();
+                        await playMIDI(demoMIDI);
+                    }
+                }
+            });
+            
+            // 暂停按钮事件
+            pauseBtn.addEventListener('click', () => {
+                pausePlayback();
+            });
+            
+            // 停止按钮事件
+            stopBtn.addEventListener('click', () => {
+                stopPlayback();
+            });
+            
+            // 文件选择事件
+            fileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const midiData = await parseMIDI(arrayBuffer);
+                    await playMIDI(midiData);
+                } catch (error) {
+                    updateStatus(`错误: ${error.message}`);
+                    console.error(error);
+                }
+            });
+            
+            // 演示按钮事件
+            demoBtn.addEventListener('click', async () => {
+                const demoMIDI = await loadDemoMIDI();
+                await playMIDI(demoMIDI);
+            });
+            
+            // 速度滑块事件
+            speedSlider.addEventListener('input', (e) => {
+                playbackSpeed = parseFloat(e.target.value);
+                speedValue.textContent = playbackSpeed.toFixed(2) + 'x';
+                
+                // 如果正在播放，重新安排事件
+                if (isPlaying && currentMIDIFile) {
+                    const wasPlaying = isPlaying;
+                    pausePlayback();
+                    
+                    // 重新计算开始时间
+                    startTime = audioContext.currentTime - currentTime / playbackSpeed;
+                    
+                    // 重新安排事件
+                    const remainingEvents = currentMIDIFile.events.filter(event => 
+                        event.time / playbackSpeed > currentTime
+                    );
+                    
+                    if (remainingEvents.length > 0) {
+                        scheduleMIDIEvents(remainingEvents);
+                    }
+                    
+                    if (wasPlaying) {
+                        resumePlayback();
+                    }
+                }
+            });
+            
+            // 通道切换事件
+            pulse1Toggle.addEventListener('change', (e) => {
+                audioNodes[0].setEnabled(e.target.checked);
+            });
+            
+            pulse2Toggle.addEventListener('change', (e) => {
+                audioNodes[1].setEnabled(e.target.checked);
+            });
+            
+            triangleToggle.addEventListener('change', (e) => {
+                audioNodes[2].setEnabled(e.target.checked);
+            });
+            
+            noiseToggle.addEventListener('change', (e) => {
+                audioNodes[3].setEnabled(e.target.checked);
+            });
+            
+            // 初始化状态
+            updateStatus('准备就绪 - 点击"播放"按钮开始演示或选择MIDI文件');
+            
+            // 调整画布大小以适应窗口变化
+            window.addEventListener('resize', () => {
+                if (animationId) {
+                    const canvas = document.getElementById('waveCanvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                }
+            });
+            
+            // 页面加载后自动播放演示曲
+            setTimeout(async () => {
+                const demoMIDI = await loadDemoMIDI();
+                await playMIDI(demoMIDI);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

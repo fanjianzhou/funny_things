@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>改进版弹跳小球和弦合成器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: #e6e6e6;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            width: 100%;
+            max-width: 1100px;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            background: linear-gradient(to right, #ff7e5f, #feb47b, #8A2BE2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a1c4fd;
+            margin-bottom: 25px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            width: 100%;
+            max-width: 1400px;
+        }
+        
+        .canvas-container {
+            position: relative;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 10px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #canvas {
+            display: block;
+            border-radius: 10px;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        
+        .controls {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .controls h2 {
+            color: #feb47b;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+        }
+        
+        .control-group h3 {
+            color: #a1c4fd;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .slider-container label {
+            min-width: 120px;
+            font-weight: 500;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ff7e5f;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 126, 95, 0.7);
+        }
+        
+        .value-display {
+            min-width: 40px;
+            text-align: center;
+            font-weight: bold;
+            color: #feb47b;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .chord-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #e6e6e6;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .chord-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .chord-btn.active {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: #16213e;
+            box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
+        }
+        
+        .color-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .color-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .color-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+        
+        .color-btn.active {
+            border-color: #feb47b;
+            box-shadow: 0 0 15px rgba(254, 180, 123, 0.8);
+        }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .reset-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e6e6e6;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .reset-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+        
+        .start-btn {
+            background: linear-gradient(to right, #11998e, #38ef7d);
+            color: #16213e;
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+        }
+        
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(17, 153, 142, 0.6);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: auto;
+            font-size: 0.9rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff7e5f;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #a1c4fd;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #a1c4fd;
+            font-size: 0.9rem;
+            max-width: 1100px;
+            line-height: 1.5;
+        }
+        
+        .info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #feb47b;
+        }
+        
+        @media (max-width: 1100px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .controls {
+                max-width: 100%;
+            }
+            
+            #canvas {
+                width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-magic"></i> 改进版弹跳小球和弦合成器</h1>
+        <p class="subtitle">八度偏移取整 | 修正全音阶为C、D、E、F#、G#、A# | 移除小球中心点</p>
+    </div>
+    
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="canvas" width="800" height="800"></canvas>
+        </div>
+        
+        <div class="controls">
+            <h2><i class="fas fa-sliders-h"></i> 控制面板</h2>
+            
+            <div class="control-group">
+                <h3><i class="fas fa-tachometer-alt"></i> 小球速度</h3>
+                <div class="slider-container">
+                    <label>速度:</label>
+                    <input type="range" id="speedSlider" min="1" max="10" value="5">
+                    <div class="value-display" id="speedValue">5</div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3><i class="fas fa-circle"></i> 小球数量</h3>
+                <div class="slider-container">
+                    <label>数量:</label>
+                    <input type="range" id="countSlider" min="1" max="30" value="12">
+                    <div class="value-display" id="countValue">12</div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3><i class="fas fa-expand-alt"></i> 小球大小</h3>
+                <div class="slider-container">
+                    <label>大小:</label>
+                    <input type="range" id="sizeSlider" min="5" max="40" value="20">
+                    <div class="value-display" id="sizeValue">20</div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3><i class="fas fa-music"></i> 和弦类型</h3>
+                <div class="button-group">
+                    <button class="chord-btn active" data-chord="pentatonic">五声音阶</button>
+                    <button class="chord-btn" data-chord="diatonic">全音阶</button>
+                    <button class="chord-btn" data-chord="major">大和弦</button>
+                    <button class="chord-btn" data-chord="minor">小和弦</button>
+                    <button class="chord-btn" data-chord="major7">大7和弦</button>
+                    <button class="chord-btn" data-chord="minor7">小7和弦</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3><i class="fas fa-palette"></i> 颜色主题</h3>
+                <div class="color-controls">
+                    <div class="color-btn active" style="background: linear-gradient(135deg, #ff7e5f, #feb47b);" data-theme="vibrant"></div>
+                    <div class="color-btn" style="background: linear-gradient(135deg, #11998e, #38ef7d);" data-theme="ocean"></div>
+                    <div class="color-btn" style="background: linear-gradient(135deg, #8A2BE2, #FF69B4);" data-theme="purple"></div>
+                    <div class="color-btn" style="background: linear-gradient(135deg, #ffd89b, #19547b);" data-theme="sunset"></div>
+                    <div class="color-btn" style="background: linear-gradient(135deg, #00c9ff, #92fe9d);" data-theme="cyan"></div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button class="action-btn reset-btn" id="resetBtn">
+                    <i class="fas fa-redo"></i> 重置小球
+                </button>
+                <button class="action-btn start-btn" id="startBtn">
+                    <i class="fas fa-play"></i> 开始/暂停
+                </button>
+            </div>
+            
+            <div class="info">
+                <i class="fas fa-info-circle"></i>
+                <p>点击画布可以添加新的小球，每个小球碰撞边界时会闪烁并爆发粒子</p>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalBalls">12</div>
+                    <div class="stat-label">小球数量</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="collisionCount">0</div>
+                    <div class="stat-label">碰撞次数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="particleCount">0</div>
+                    <div class="stat-label">粒子数量</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>小球越小音调越高 | 拖影效果 | 碰撞时闪烁和粒子爆发 | 音域扩展至2个八度 | 全音阶修正为6个音符</p>
+    </div>
+
+    <script>
+        // 初始化Canvas和上下文
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 音频上下文
+        let audioContext;
+        let isPlaying = true;
+        
+        // 统计变量
+        let collisionCount = 0;
+        let totalParticles = 0;
+        
+        // 和弦定义（频率比）
+        // 修正：全音阶改为C、D、E、F#、G#、A#六个音符
+        const chords = {
+            pentatonic: [1, 9/8, 5/4, 3/2, 5/3], // 五声音阶
+            diatonic: [1, 9/8, 5/4, Math.pow(2, 6/12), Math.pow(2, 8/12), Math.pow(2, 10/12)], // 全音阶 (C, D, E, F#, G#, A#)
+            major: [1, 5/4, 3/2], // 大和弦
+            minor: [1, 6/5, 3/2], // 小和弦
+            major7: [1, 5/4, 3/2, 15/8], // 大七和弦
+            minor7: [1, 6/5, 3/2, 9/5] // 小七和弦
+        };
+        
+        let currentChord = 'pentatonic';
+        let currentTheme = 'vibrant';
+        
+        // 基础频率（C4）
+        const baseFreq = 261.63;
+        
+        // 小球数组
+        let balls = [];
+        
+        // 粒子类
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 4 + 2;
+                this.speedX = (Math.random() - 0.5) * 8;
+                this.speedY = (Math.random() - 0.5) * 8;
+                this.color = color;
+                this.life = 1.0; // 生命周期 (0-1)
+                this.decay = Math.random() * 0.03 + 0.02; // 衰减速度
+            }
+            
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.life -= this.decay;
+                
+                // 添加重力效果
+                this.speedY += 0.05;
+                
+                return this.life > 0;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        // 小球类
+        class Ball {
+            constructor(x, y, radius) {
+                this.x = x;
+                this.y = y;
+                // 使用滑块控制的大小
+                const sizeFactor = document.getElementById('sizeSlider').value / 20;
+                this.radius = radius || (Math.random() * 20 + 10) * sizeFactor;
+                this.dx = (Math.random() - 0.5) * 8;
+                this.dy = (Math.random() - 0.5) * 8;
+                this.color = this.getRandomColor();
+                this.id = Math.random().toString(36).substr(2, 9);
+                
+                // 拖影效果相关
+                this.trail = []; // 存储轨迹点
+                this.trailLength = 15; // 轨迹长度
+                
+                // 闪烁效果相关
+                this.flashTimer = 0;
+                this.flashDuration = 15; // 闪烁持续时间（帧数）
+                
+                // 粒子效果
+                this.particles = [];
+                
+                // 声音相关
+                this.oscillator = null;
+                this.gainNode = null;
+            }
+            
+            // 根据主题获取随机颜色
+            getRandomColor() {
+                const themes = {
+                    vibrant: [
+                        '#FF7E5F', '#FEB47B', '#FF6B6B', '#4ECDC4', '#45B7D1',
+                        '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'
+                    ],
+                    ocean: [
+                        '#11998E', '#38EF7D', '#00B4DB', '#0083B0', '#00D2FF',
+                        '#3A7BD5', '#00D2FF', '#00c6ff', '#0072ff', '#00B4DB'
+                    ],
+                    purple: [
+                        '#8A2BE2', '#FF69B4', '#9370DB', '#BA55D3', '#DA70D6',
+                        '#EE82EE', '#DDA0DD', '#FF00FF', '#8B008B', '#9400D3'
+                    ],
+                    sunset: [
+                        '#FFD89B', '#19547B', '#FFAFBD', '#FFC3A0', '#FF677D',
+                        '#4A569D', '#DC2430', '#7B4397', '#E43A19', '#8E2DE2'
+                    ],
+                    cyan: [
+                        '#00C9FF', '#92FE9D', '#00F5A0', '#00D9F9', '#00BBFF',
+                        '#00F5FF', '#00FFE0', '#00FFAA', '#00FF95', '#00FF6A'
+                    ]
+                };
+                
+                return themes[currentTheme][Math.floor(Math.random() * themes[currentTheme].length)];
+            }
+            
+            // 更新位置
+            update(speedFactor) {
+                // 应用速度因子
+                this.x += this.dx * speedFactor;
+                this.y += this.dy * speedFactor;
+                
+                // 更新拖影
+                this.trail.push({x: this.x, y: this.y});
+                if (this.trail.length > this.trailLength) {
+                    this.trail.shift();
+                }
+                
+                // 更新闪烁计时器
+                if (this.flashTimer > 0) {
+                    this.flashTimer--;
+                }
+                
+                // 更新粒子
+                this.particles = this.particles.filter(particle => {
+                    return particle.update();
+                });
+                
+                // 边界碰撞检测
+                let collided = false;
+                
+                // 左边界或右边界
+                if (this.x - this.radius < 0) {
+                    this.x = this.radius;
+                    this.dx = Math.abs(this.dx);
+                    collided = true;
+                } else if (this.x + this.radius > canvas.width) {
+                    this.x = canvas.width - this.radius;
+                    this.dx = -Math.abs(this.dx);
+                    collided = true;
+                }
+                
+                // 上边界或下边界
+                if (this.y - this.radius < 0) {
+                    this.y = this.radius;
+                    this.dy = Math.abs(this.dy);
+                    collided = true;
+                } else if (this.y + this.radius > canvas.height) {
+                    this.y = canvas.height - this.radius;
+                    this.dy = -Math.abs(this.dy);
+                    collided = true;
+                }
+                
+                // 如果碰撞，触发效果
+                if (collided) {
+                    this.onCollision();
+                    collisionCount++;
+                    document.getElementById('collisionCount').textContent = collisionCount;
+                }
+                
+                return collided;
+            }
+            
+            // 碰撞时触发效果
+            onCollision() {
+                // 触发闪烁
+                this.flashTimer = this.flashDuration;
+                
+                // 生成粒子
+                this.createParticles();
+                
+                // 播放声音
+                this.playCollisionSound();
+            }
+            
+            // 创建粒子
+            createParticles() {
+                const particleCount = Math.floor(this.radius / 2) + 5;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    this.particles.push(new Particle(this.x, this.y, this.color));
+                    totalParticles++;
+                }
+                
+                document.getElementById('particleCount').textContent = totalParticles;
+            }
+            
+            // 播放碰撞声音
+            playCollisionSound() {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // 从当前和弦中随机选择一个音
+                const chordNotes = chords[currentChord];
+                const noteIndex = Math.floor(Math.random() * chordNotes.length);
+                
+                // 计算频率：球越小音调越高，扩展到2个八度
+                // 半径范围：5-40，越小音调越高
+                // 两个八度范围：baseFreq 到 baseFreq * 4
+                const sizeFactor = Math.max(5, Math.min(40, this.radius));
+                // 改进：八度偏移取整，防止非整数八度
+                const octaveShift = Math.round(2 * (1 - (sizeFactor - 5) / 35)); // 0到2个整数八度
+                const frequency = baseFreq * chordNotes[noteIndex] * Math.pow(2, octaveShift);
+                
+                // 创建振荡器
+                this.oscillator = audioContext.createOscillator();
+                this.gainNode = audioContext.createGain();
+                
+                this.oscillator.connect(this.gainNode);
+                this.gainNode.connect(audioContext.destination);
+                
+                // 设置声音参数
+                this.oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                // 使用更丰富的音色
+                this.oscillator.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+                
+                // 音量包络
+                this.gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                this.gainNode.gain.linearRampToValueAtTime(0.3 * (this.radius / 30), audioContext.currentTime + 0.01);
+                this.gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
+                
+                // 播放声音
+                this.oscillator.start(audioContext.currentTime);
+                this.oscillator.stop(audioContext.currentTime + 0.8);
+            }
+            
+            // 绘制拖影
+            drawTrail() {
+                if (this.trail.length < 2) return;
+                
+                for (let i = 0; i < this.trail.length - 1; i++) {
+                    const point = this.trail[i];
+                    const nextPoint = this.trail[i + 1];
+                    
+                    // 计算透明度（越旧的轨迹越透明）
+                    const alpha = i / this.trail.length;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(point.x, point.y);
+                    ctx.lineTo(nextPoint.x, nextPoint.y);
+                    
+                    // 创建渐变的拖影颜色
+                    const gradient = ctx.createLinearGradient(
+                        point.x, point.y,
+                        nextPoint.x, nextPoint.y
+                    );
+                    
+                    gradient.addColorStop(0, this.color.replace(')', ', 0.3)').replace('rgb', 'rgba'));
+                    gradient.addColorStop(1, this.color.replace(')', ', 0)').replace('rgb', 'rgba'));
+                    
+                    ctx.strokeStyle = gradient;
+                    ctx.lineWidth = this.radius * 0.7 * alpha;
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                }
+            }
+            
+            // 绘制粒子
+            drawParticles() {
+                this.particles.forEach(particle => {
+                    particle.draw();
+                });
+            }
+            
+            // 绘制小球
+            draw() {
+                // 绘制拖影
+                this.drawTrail();
+                
+                // 绘制粒子
+                this.drawParticles();
+                
+                // 绘制小球主体
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                
+                // 根据闪烁状态调整颜色
+                let drawColor = this.color;
+                if (this.flashTimer > 0) {
+                    // 闪烁时变成白色
+                    drawColor = '#FFFFFF';
+                }
+                
+                // 创建渐变填充
+                const gradient = ctx.createRadialGradient(
+                    this.x - this.radius/3, this.y - this.radius/3, 1,
+                    this.x, this.y, this.radius
+                );
+                
+                gradient.addColorStop(0, '#FFFFFF');
+                gradient.addColorStop(0.3, drawColor);
+                gradient.addColorStop(1, drawColor.replace(')', ', 0.5)').replace('rgb', 'rgba'));
+                
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                // 添加高光
+                ctx.beginPath();
+                ctx.arc(this.x - this.radius/3, this.y - this.radius/3, this.radius/4, 0, Math.PI * 2);
+                ctx.fillStyle = this.flashTimer > 0 ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.7)';
+                ctx.fill();
+                
+                // 添加描边
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = this.flashTimer > 0 ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = this.flashTimer > 0 ? 3 : 2;
+                ctx.stroke();
+                
+                // 改进：移除了小球中心点
+            }
+        }
+        
+        // 初始化小球
+        function initBalls(count) {
+            balls = [];
+            for (let i = 0; i < count; i++) {
+                const sizeFactor = document.getElementById('sizeSlider').value / 20;
+                const radius = (Math.random() * 20 + 10) * sizeFactor;
+                const x = Math.random() * (canvas.width - radius * 2) + radius;
+                const y = Math.random() * (canvas.height - radius * 2) + radius;
+                balls.push(new Ball(x, y, radius));
+            }
+            
+            // 更新统计
+            document.getElementById('totalBalls').textContent = balls.length;
+            collisionCount = 0;
+            document.getElementById('collisionCount').textContent = collisionCount;
+        }
+        
+        // 动画循环
+        function animate() {
+            // 使用半透明矩形创建拖影效果
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制边框
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 6;
+            ctx.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
+            
+            // 改进：移除了中心点
+            // 改为绘制四个角的装饰点
+            const cornerSize = 8;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.arc(cornerSize, cornerSize, cornerSize/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(canvas.width - cornerSize, cornerSize, cornerSize/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(cornerSize, canvas.height - cornerSize, cornerSize/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(canvas.width - cornerSize, canvas.height - cornerSize, cornerSize/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 更新和绘制每个小球
+            const speedFactor = document.getElementById('speedSlider').value / 5;
+            balls.forEach(ball => {
+                ball.update(speedFactor);
+                ball.draw();
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // 更新小球数量
+        function updateBallCount(count) {
+            const currentCount = balls.length;
+            
+            if (count > currentCount) {
+                // 添加小球
+                const sizeFactor = document.getElementById('sizeSlider').value / 20;
+                for (let i = 0; i < count - currentCount; i++) {
+                    const radius = (Math.random() * 20 + 10) * sizeFactor;
+                    const x = Math.random() * (canvas.width - radius * 2) + radius;
+                    const y = Math.random() * (canvas.height - radius * 2) + radius;
+                    balls.push(new Ball(x, y, radius));
+                }
+            } else if (count < currentCount) {
+                // 移除小球
+                balls = balls.slice(0, count);
+            }
+            
+            // 更新统计
+            document.getElementById('totalBalls').textContent = balls.length;
+        }
+        
+        // 更新UI显示值
+        function updateValueDisplays() {
+            document.getElementById('speedValue').textContent = document.getElementById('speedSlider').value;
+            document.getElementById('countValue').textContent = document.getElementById('countSlider').value;
+            document.getElementById('sizeValue').textContent = document.getElementById('sizeSlider').value;
+        }
+        
+        // 设置和弦按钮事件
+        function setupChordButtons() {
+            const chordButtons = document.querySelectorAll('.chord-btn');
+            chordButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    chordButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    currentChord = button.dataset.chord;
+                    
+                    // 播放测试音
+                    playTestChord();
+                });
+            });
+        }
+        
+        // 设置颜色按钮事件
+        function setupColorButtons() {
+            const colorButtons = document.querySelectorAll('.color-btn');
+            colorButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    colorButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    currentTheme = button.dataset.theme;
+                    
+                    // 更新所有小球的颜色
+                    balls.forEach(ball => {
+                        ball.color = ball.getRandomColor();
+                    });
+                });
+            });
+        }
+        
+        // 播放测试和弦
+        function playTestChord() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const chordNotes = chords[currentChord];
+            const now = audioContext.currentTime;
+            
+            // 播放和弦中的所有音符
+            chordNotes.forEach((noteRatio, index) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // 测试音使用中音区域
+                const frequency = baseFreq * noteRatio;
+                oscillator.frequency.setValueAtTime(frequency, now);
+                oscillator.type = 'sine';
+                
+                // 音量包络
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.2, now + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+                
+                // 每个音符稍微延迟开始，创造和弦效果
+                oscillator.start(now + index * 0.05);
+                oscillator.stop(now + 0.8 + index * 0.05);
+            });
+        }
+        
+        // 初始化
+        function init() {
+            // 初始化小球
+            initBalls(12);
+            
+            // 设置UI事件
+            document.getElementById('speedSlider').addEventListener('input', updateValueDisplays);
+            document.getElementById('countSlider').addEventListener('input', function() {
+                updateValueDisplays();
+                updateBallCount(parseInt(this.value));
+            });
+            
+            document.getElementById('sizeSlider').addEventListener('input', function() {
+                updateValueDisplays();
+                // 更新现有小球的大小
+                const sizeFactor = this.value / 20;
+                balls.forEach(ball => {
+                    ball.radius = (ball.radius / (document.getElementById('sizeSlider').oldValue || 20) * 20) * sizeFactor;
+                });
+                document.getElementById('sizeSlider').oldValue = this.value;
+            });
+            
+            document.getElementById('resetBtn').addEventListener('click', function() {
+                initBalls(parseInt(document.getElementById('countSlider').value));
+                totalParticles = 0;
+                document.getElementById('particleCount').textContent = totalParticles;
+            });
+            
+            document.getElementById('startBtn').addEventListener('click', function() {
+                isPlaying = !isPlaying;
+                this.innerHTML = isPlaying ? 
+                    '<i class="fas fa-pause"></i> 暂停' : 
+                    '<i class="fas fa-play"></i> 开始';
+            });
+            
+            // 点击画布添加小球
+            canvas.addEventListener('click', function(event) {
+                const rect = canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                
+                // 使用当前大小设置
+                const sizeFactor = document.getElementById('sizeSlider').value / 20;
+                const radius = (Math.random() * 20 + 10) * sizeFactor;
+                
+                balls.push(new Ball(x, y, radius));
+                
+                // 更新小球数量显示
+                document.getElementById('countSlider').value = balls.length;
+                updateValueDisplays();
+                document.getElementById('totalBalls').textContent = balls.length;
+            });
+            
+            // 设置和弦和颜色按钮
+            setupChordButtons();
+            setupColorButtons();
+            
+            // 初始化UI显示值
+            updateValueDisplays();
+            
+            // 开始动画
+            animate();
+            
+            // 播放欢迎音
+            setTimeout(() => {
+                playTestChord();
+            }, 500);
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

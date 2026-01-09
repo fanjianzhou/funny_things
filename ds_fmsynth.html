@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM 合成器 - JavaScript & HTML 实现</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0c0c0c, #1a1a2e);
+            color: #f1f1f1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border-bottom: 2px solid #4cc9f0;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #4cc9f0, #4361ee);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a9d6e5;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .control-panel {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(30, 30, 46, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #333355;
+        }
+        
+        .keyboard-container {
+            flex: 2;
+            min-width: 600px;
+            background: rgba(30, 30, 46, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #333355;
+        }
+        
+        .section-title {
+            font-size: 1.6rem;
+            margin-bottom: 25px;
+            color: #4cc9f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            color: #4361ee;
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 25px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(20, 20, 35, 0.7);
+            padding: 20px 15px;
+            border-radius: 15px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .control-group:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(76, 201, 240, 0.2);
+        }
+        
+        .control-label {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #a9d6e5;
+        }
+        
+        .knob-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
+        
+        .knob {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #1a1a2e, #0c0c0c);
+            box-shadow: 
+                inset 0 0 15px rgba(0, 0, 0, 0.8),
+                0 5px 15px rgba(0, 0, 0, 0.5);
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .knob-indicator {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            width: 4px;
+            height: 30px;
+            background: #4cc9f0;
+            transform-origin: bottom center;
+            transform: translateX(-50%);
+            border-radius: 2px;
+            box-shadow: 0 0 5px #4cc9f0;
+        }
+        
+        .control-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #4cc9f0;
+            margin-top: 5px;
+            min-height: 24px;
+        }
+        
+        .keyboard {
+            display: flex;
+            flex-direction: column;
+            background: rgba(20, 20, 35, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .key-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .key {
+            width: 60px;
+            height: 200px;
+            background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+            border-radius: 0 0 8px 8px;
+            margin: 0 2px;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 15px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.1s;
+            user-select: none;
+            position: relative;
+        }
+        
+        .key:hover {
+            background: linear-gradient(to bottom, #ffffff, #f1f3f5);
+        }
+        
+        .key.active {
+            background: linear-gradient(to bottom, #4cc9f0, #3a9ec2);
+            transform: translateY(2px);
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .key.black {
+            width: 40px;
+            height: 130px;
+            background: linear-gradient(to bottom, #333, #000);
+            color: #f1f1f1;
+            margin: 0 -20px;
+            z-index: 1;
+            border-radius: 0 0 5px 5px;
+        }
+        
+        .key.black:hover {
+            background: linear-gradient(to bottom, #444, #111);
+        }
+        
+        .key.black.active {
+            background: linear-gradient(to bottom, #4361ee, #2f4fcc);
+        }
+        
+        .key-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .keyboard-instruction {
+            text-align: center;
+            margin-top: 20px;
+            color: #a9d6e5;
+            font-size: 1.1rem;
+        }
+        
+        .key-mapping {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .key-map-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background: rgba(20, 20, 35, 0.7);
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        
+        .key-note {
+            color: #4cc9f0;
+            font-weight: bold;
+        }
+        
+        .key-key {
+            color: #f72585;
+            font-weight: bold;
+            background: rgba(247, 37, 133, 0.1);
+            padding: 2px 10px;
+            border-radius: 5px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #333355;
+            color: #a9d6e5;
+            font-size: 0.9rem;
+        }
+        
+        .play-button {
+            background: linear-gradient(90deg, #4cc9f0, #4361ee);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px auto;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(76, 201, 240, 0.3);
+        }
+        
+        .play-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(76, 201, 240, 0.4);
+        }
+        
+        .play-button:active {
+            transform: translateY(1px);
+        }
+        
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .keyboard-container, .control-panel {
+                min-width: 100%;
+            }
+            
+            .key {
+                width: 40px;
+                height: 150px;
+            }
+            
+            .key.black {
+                width: 25px;
+                height: 100px;
+                margin: 0 -12px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+            
+            .key {
+                width: 30px;
+                height: 120px;
+                font-size: 0.8rem;
+            }
+            
+            .key.black {
+                width: 20px;
+                height: 80px;
+                margin: 0 -10px;
+            }
+        }
+        
+        .presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .preset-btn {
+            background: rgba(67, 97, 238, 0.2);
+            color: #a9d6e5;
+            border: 1px solid #4361ee;
+            padding: 8px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .preset-btn:hover {
+            background: rgba(67, 97, 238, 0.4);
+        }
+        
+        .preset-btn.active {
+            background: #4361ee;
+            color: white;
+        }
+        
+        .effect-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 15px;
+            gap: 10px;
+            color: #a9d6e5;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #4cc9f0;
+            box-shadow: 0 0 10px #4cc9f0;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-wave-square"></i> FM 合成器 + BitCrush</h1>
+        <p class="subtitle">修复了参数旋钮问题，键盘演奏现在能发出正确音高，并添加了可调的BitCrush效果器，可以创造低保真音色。</p>
+    </div>
+    
+    <div class="container">
+        <div class="control-panel">
+            <h2 class="section-title"><i class="fas fa-sliders-h"></i> 合成器参数</h2>
+            
+            <div class="controls-grid">
+                <div class="control-group" id="carrier-freq-ratio-control">
+                    <div class="control-label">载波频率比</div>
+                    <div class="knob-container">
+                        <div class="knob">
+                            <div class="knob-indicator" id="carrier-freq-ratio-indicator"></div>
+                        </div>
+                    </div>
+                    <div class="control-value" id="carrier-freq-ratio-value">1.0</div>
+                </div>
+                
+                <div class="control-group" id="modulator-freq-ratio-control">
+                    <div class="control-label">调制频率比</div>
+                    <div class="knob-container">
+                        <div class="knob">
+                            <div class="knob-indicator" id="modulator-freq-ratio-indicator"></div>
+                        </div>
+                    </div>
+                    <div class="control-value" id="modulator-freq-ratio-value">0.5</div>
+                </div>
+                
+                <div class="control-group" id="modulation-index-control">
+                    <div class="control-label">调制指数</div>
+                    <div class="knob-container">
+                        <div class="knob">
+                            <div class="knob-indicator" id="modulation-index-indicator"></div>
+                        </div>
+                    </div>
+                    <div class="control-value" id="modulation-index-value">5.0</div>
+                </div>
+                
+                <div class="control-group" id="attack-control">
+                    <div class="control-label">起音时间</div>
+                    <div class="knob-container">
+                        <div class="knob">
+                            <div class="knob-indicator" id="attack-indicator"></div>
+                        </div>
+                    </div>
+                    <div class="control-value" id="attack-value">0.1 s</div>
+                </div>
+                
+                <div class="control-group" id="decay-control">
+                    <div class="control-label">衰减时间</div>
+                    <div class="knob-container">
+                        <div class="knob">
+                            <div class="knob-indicator" id="decay-indicator"></div>
+                        </div>
+                    </div>
+                    <div class="control-value" id="decay-value">0.3 s</div>
+                </div>
+                
+                <div class="control-group" id="sustain-control">
+                    <div class="control-label">延音级别</div>
+                    <div class="knob-container">
+                        <div class="knob">
+                            <div class="knob-indicator" id="sustain-indicator"></div>
+                        </div>
+                    </div>
+                    <div class="control-value" id="sustain-value">0.7</div>
+                </div>
+                
+                <div class="control-group" id="release-control">
+                    <div class="control-label">释音时间</div>
+                    <div class="knob-container">
+                        <div class="knob">
+                            <div class="knob-indicator" id="release-indicator"></div>
+                        </div>
+                    </div>
+                    <div class="control-value" id="release-value">0.5 s</div>
+                </div>
+                
+                <div class="control-group" id="volume-control">
+                    <div class="control-label">主音量</div>
+                    <div class="knob-container">
+                        <div class="knob">
+                            <div class="knob-indicator" id="volume-indicator"></div>
+                        </div>
+                    </div>
+                    <div class="control-value" id="volume-value">0.7</div>
+                </div>
+                
+                <div class="control-group" id="bitcrush-control">
+                    <div class="control-label">BitCrush 强度</div>
+                    <div class="knob-container">
+                        <div class="knob">
+                            <div class="knob-indicator" id="bitcrush-indicator"></div>
+                        </div>
+                    </div>
+                    <div class="control-value" id="bitcrush-value">1.0</div>
+                </div>
+                
+                <div class="control-group" id="bitcrush-mix-control">
+                    <div class="control-label">BitCrush 混合</div>
+                    <div class="knob-container">
+                        <div class="knob">
+                            <div class="knob-indicator" id="bitcrush-mix-indicator"></div>
+                        </div>
+                    </div>
+                    <div class="control-value" id="bitcrush-mix-value">0.5</div>
+                </div>
+            </div>
+            
+            <div class="effect-status">
+                <div class="status-dot"></div>
+                <span>BitCrush 效果器已启用</span>
+            </div>
+            
+            <button class="play-button" id="play-test-btn">
+                <i class="fas fa-play"></i> 测试音调 (A4)
+            </button>
+            
+            <h3 class="section-title" style="font-size: 1.3rem; margin-top: 30px;"><i class="fas fa-prescription-bottle"></i> 预设音色</h3>
+            <div class="presets">
+                <div class="preset-btn" data-preset="bell">钟声音色</div>
+                <div class="preset-btn" data-preset="bass">贝司音色</div>
+                <div class="preset-btn" data-preset="lead">主奏音色</div>
+                <div class="preset-btn" data-preset="pad">铺底音色</div>
+                <div class="preset-btn" data-preset="pluck">弹拨音色</div>
+                <div class="preset-btn" data-preset="lofi">低保真音色</div>
+            </div>
+        </div>
+        
+        <div class="keyboard-container">
+            <h2 class="section-title"><i class="fas fa-keyboard"></i> 演奏键盘</h2>
+            
+            <div class="keyboard">
+                <div class="key-row">
+                    <div class="key" data-note="C4"><span class="key-label">C</span></div>
+                    <div class="key black" data-note="C#4"><span class="key-label">C#</span></div>
+                    <div class="key" data-note="D4"><span class="key-label">D</span></div>
+                    <div class="key black" data-note="D#4"><span class="key-label">D#</span></div>
+                    <div class="key" data-note="E4"><span class="key-label">E</span></div>
+                    <div class="key" data-note="F4"><span class="key-label">F</span></div>
+                    <div class="key black" data-note="F#4"><span class="key-label">F#</span></div>
+                    <div class="key" data-note="G4"><span class="key-label">G</span></div>
+                    <div class="key black" data-note="G#4"><span class="key-label">G#</span></div>
+                    <div class="key" data-note="A4"><span class="key-label">A</span></div>
+                    <div class="key black" data-note="A#4"><span class="key-label">A#</span></div>
+                    <div class="key" data-note="B4"><span class="key-label">B</span></div>
+                    <div class="key" data-note="C5"><span class="key-label">C</span></div>
+                </div>
+            </div>
+            
+            <p class="keyboard-instruction">点击上方键盘或使用电脑键盘演奏 (A,S,D,F,G,H,J,K,L 对应白键，W,E,T,Y,U,O 对应黑键)</p>
+            
+            <h3 class="section-title" style="font-size: 1.3rem; margin-top: 20px;"><i class="fas fa-info-circle"></i> 键盘映射</h3>
+            <div class="key-mapping">
+                <div class="key-map-item">
+                    <span class="key-note">C4 (中音 Do)</span>
+                    <span class="key-key">A 键</span>
+                </div>
+                <div class="key-map-item">
+                    <span class="key-note">D4 (中音 Re)</span>
+                    <span class="key-key">S 键</span>
+                </div>
+                <div class="key-map-item">
+                    <span class="key-note">E4 (中音 Mi)</span>
+                    <span class="key-key">D 键</span>
+                </div>
+                <div class="key-map-item">
+                    <span class="key-note">F4 (中音 Fa)</span>
+                    <span class="key-key">F 键</span>
+                </div>
+                <div class="key-map-item">
+                    <span class="key-note">G4 (中音 Sol)</span>
+                    <span class="key-key">G 键</span>
+                </div>
+                <div class="key-map-item">
+                    <span class="key-note">A4 (中音 La)</span>
+                    <span class="key-key">H 键</span>
+                </div>
+                <div class="key-map-item">
+                    <span class="key-note">B4 (中音 Si)</span>
+                    <span class="key-key">J 键</span>
+                </div>
+                <div class="key-map-item">
+                    <span class="key-note">C5 (高音 Do)</span>
+                    <span class="key-key">K 键</span>
+                </div>
+                <div class="key-map-item">
+                    <span class="key-note">C#4/Db4</span>
+                    <span class="key-key">W 键</span>
+                </div>
+                <div class="key-map-item">
+                    <span class="key-note">D#4/Eb4</span>
+                    <span class="key-key">E 键</span>
+                </div>
+                <div class="key-map-item">
+                    <span class="key-note">F#4/Gb4</span>
+                    <span class="key-key">T 键</span>
+                </div>
+                <div class="key-map-item">
+                    <span class="key-note">G#4/Ab4</span>
+                    <span class="key-key">Y 键</span>
+                </div>
+                <div class="key-map-item">
+                    <span class="key-note">A#4/Bb4</span>
+                    <span class="key-key">U 键</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>FM 合成器 + BitCrush - 修复了旋钮Bug并添加低保真效果 | 频率调制合成技术演示</p>
+        <p>提示：载波频率比和调制频率比是相对于基础音符频率的比率，这使键盘能发出正确音高</p>
+    </div>
+
+    <script>
+        // 音频上下文和全局变量
+        let audioContext;
+        let activeVoices = {};
+        const noteFrequencies = {
+            'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13,
+            'E4': 329.63, 'F4': 349.23, 'F#4': 369.99, 'G4': 392.00,
+            'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
+            'C5': 523.25
+        };
+        
+        // 键盘映射
+        const keyMap = {
+            'a': 'C4', 'w': 'C#4', 's': 'D4', 'e': 'D#4',
+            'd': 'E4', 'f': 'F4', 't': 'F#4', 'g': 'G4',
+            'y': 'G#4', 'h': 'A4', 'u': 'A#4', 'j': 'B4',
+            'k': 'C5'
+        };
+        
+        // 合成器参数 - 修复了参数命名问题
+        let params = {
+            carrierFreqRatio: 1.0,      // 载波频率比率 (相对于基础频率)
+            modulatorFreqRatio: 0.5,    // 调制频率比率 (相对于基础频率)
+            modulationIndex: 5.0,       // 调制指数
+            attack: 0.1,                // 起音时间 (秒)
+            decay: 0.3,                 // 衰减时间 (秒)
+            sustain: 0.7,               // 延音级别 (0-1)
+            release: 0.5,               // 释音时间 (秒)
+            volume: 0.7,                // 主音量 (0-1)
+            bitcrush: 1.0,              // BitCrush 强度 (1-32)
+            bitcrushMix: 0.5            // BitCrush 混合 (0-1)
+        };
+        
+        // 初始化音频上下文
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                console.log("音频上下文初始化成功");
+            } catch (error) {
+                console.error("音频上下文初始化失败:", error);
+                alert("您的浏览器不支持Web Audio API。请使用Chrome、Firefox或Edge等现代浏览器。");
+            }
+        }
+        
+        // 创建BitCrush效果器
+        function createBitCrusher() {
+            // 创建音频处理节点
+            const bitCrusherNode = audioContext.createScriptProcessor(4096, 1, 1);
+            
+            // 设置处理函数
+            bitCrusherNode.onaudioprocess = function(event) {
+                const inputBuffer = event.inputBuffer;
+                const outputBuffer = event.outputBuffer;
+                
+                for (let channel = 0; channel < outputBuffer.numberOfChannels; channel++) {
+                    const inputData = inputBuffer.getChannelData(channel);
+                    const outputData = outputBuffer.getChannelData(channel);
+                    
+                    // 应用BitCrush效果
+                    for (let i = 0; i < inputData.length; i++) {
+                        // 原始信号
+                        const originalSignal = inputData[i];
+                        
+                        // 计算量化级别 (bit depth)
+                        const bits = Math.max(1, Math.min(32, params.bitcrush));
+                        const levels = Math.pow(2, bits);
+                        
+                        // 应用量化
+                        let crushedSignal = Math.round(originalSignal * levels) / levels;
+                        
+                        // 混合原始信号和BitCrush信号
+                        outputData[i] = originalSignal * (1 - params.bitcrushMix) + crushedSignal * params.bitcrushMix;
+                    }
+                }
+            };
+            
+            return bitCrusherNode;
+        }
+        
+        // 创建FM合成声音
+        function playNote(note, duration = null) {
+            if (!audioContext) initAudio();
+            
+            // 获取基础频率
+            const baseFrequency = typeof note === 'string' ? noteFrequencies[note] : note;
+            
+            // 计算实际频率
+            const carrierFrequency = baseFrequency * params.carrierFreqRatio;
+            const modulatorFrequency = baseFrequency * params.modulatorFreqRatio;
+            
+            // 创建音频节点
+            const carrier = audioContext.createOscillator();
+            const modulator = audioContext.createOscillator();
+            const modulatorGain = audioContext.createGain();
+            const gainNode = audioContext.createGain();
+            const masterGain = audioContext.createGain();
+            
+            // 创建BitCrush效果器
+            const bitCrusher = createBitCrusher();
+            
+            // 配置调制器
+            modulator.type = 'sine';
+            modulator.frequency.value = modulatorFrequency;
+            
+            // 配置调制器增益（调制指数）
+            // 调制指数决定了调制深度，影响音色变化
+            modulatorGain.gain.value = params.modulationIndex * carrierFrequency;
+            
+            // 配置载波器
+            carrier.type = 'sine';
+            carrier.frequency.value = carrierFrequency;
+            
+            // 连接节点：调制器 -> 调制器增益 -> 载波器频率
+            modulator.connect(modulatorGain);
+            modulatorGain.connect(carrier.frequency);
+            
+            // 配置ADSR包络
+            const now = audioContext.currentTime;
+            const attackTime = now + params.attack;
+            const decayTime = attackTime + params.decay;
+            
+            // 设置音量包络
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(1, attackTime);
+            gainNode.gain.linearRampToValueAtTime(params.sustain, decayTime);
+            
+            // 连接音频链：载波器 -> 增益 -> BitCrush -> 主增益 -> 输出
+            carrier.connect(gainNode);
+            gainNode.connect(bitCrusher);
+            bitCrusher.connect(masterGain);
+            masterGain.connect(audioContext.destination);
+            masterGain.gain.value = params.volume;
+            
+            // 开始播放
+            carrier.start();
+            modulator.start();
+            
+            // 存储声音对象以便停止
+            const voiceId = Date.now() + Math.random();
+            activeVoices[voiceId] = { 
+                carrier, 
+                modulator, 
+                gainNode, 
+                masterGain,
+                bitCrusher
+            };
+            
+            // 如果不是持续音，自动停止
+            if (duration) {
+                setTimeout(() => {
+                    stopNote(voiceId);
+                }, duration * 1000);
+            }
+            
+            return voiceId;
+        }
+        
+        // 停止播放音符
+        function stopNote(voiceId) {
+            if (activeVoices[voiceId]) {
+                const { carrier, modulator, gainNode, masterGain, bitCrusher } = activeVoices[voiceId];
+                const now = audioContext.currentTime;
+                
+                // 应用释音阶段
+                gainNode.gain.cancelScheduledValues(now);
+                gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + params.release);
+                
+                // 停止振荡器
+                setTimeout(() => {
+                    carrier.stop();
+                    modulator.stop();
+                    
+                    // 断开BitCrusher节点
+                    if (bitCrusher) {
+                        bitCrusher.disconnect();
+                    }
+                    
+                    delete activeVoices[voiceId];
+                }, params.release * 1000);
+            }
+        }
+        
+        // 停止所有音符
+        function stopAllNotes() {
+            Object.keys(activeVoices).forEach(id => {
+                const { carrier, modulator, bitCrusher } = activeVoices[id];
+                carrier.stop();
+                modulator.stop();
+                
+                // 断开BitCrusher节点
+                if (bitCrusher) {
+                    bitCrusher.disconnect();
+                }
+            });
+            activeVoices = {};
+        }
+        
+        // 初始化旋钮控制 - 修复了旋钮参数映射问题
+        function initKnobs() {
+            // 参数到控件的映射
+            const paramToControlMap = {
+                'carrierFreqRatio': 'carrier-freq-ratio',
+                'modulatorFreqRatio': 'modulator-freq-ratio',
+                'modulationIndex': 'modulation-index',
+                'attack': 'attack',
+                'decay': 'decay',
+                'sustain': 'sustain',
+                'release': 'release',
+                'volume': 'volume',
+                'bitcrush': 'bitcrush',
+                'bitcrushMix': 'bitcrush-mix'
+            };
+            
+            // 初始化每个旋钮
+            Object.keys(paramToControlMap).forEach(paramName => {
+                const controlId = paramToControlMap[paramName];
+                const controlGroup = document.getElementById(`${controlId}-control`);
+                
+                if (!controlGroup) {
+                    console.warn(`未找到控件: ${controlId}-control`);
+                    return;
+                }
+                
+                const knob = controlGroup.querySelector('.knob');
+                const indicator = controlGroup.querySelector('.knob-indicator');
+                const valueDisplay = controlGroup.querySelector('.control-value');
+                
+                let isDragging = false;
+                let startY = 0;
+                let startValue = params[paramName];
+                
+                // 设置旋钮初始位置
+                updateKnobPosition(indicator, paramName);
+                updateValueDisplay(valueDisplay, paramName);
+                
+                // 鼠标按下事件
+                knob.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    startY = e.clientY;
+                    startValue = params[paramName];
+                    knob.style.cursor = 'grabbing';
+                });
+                
+                // 鼠标移动事件
+                const mouseMoveHandler = (e) => {
+                    if (!isDragging) return;
+                    
+                    const deltaY = startY - e.clientY; // 向上移动增加数值
+                    let newValue;
+                    
+                    // 根据参数类型调整变化幅度
+                    if (paramName.includes('FreqRatio')) {
+                        // 频率比率：指数变化 (0.1-10)
+                        const ratio = 1 + deltaY / 200;
+                        newValue = startValue * ratio;
+                        newValue = Math.max(0.1, Math.min(10, newValue));
+                        params[paramName] = newValue;
+                    } else if (paramName === 'modulationIndex') {
+                        // 调制指数：线性变化 (0-20)
+                        newValue = startValue + deltaY / 10;
+                        newValue = Math.max(0, Math.min(20, newValue));
+                        params[paramName] = newValue;
+                    } else if (paramName === 'bitcrush') {
+                        // BitCrush强度：线性变化 (1-32)
+                        newValue = startValue + deltaY / 20;
+                        newValue = Math.max(1, Math.min(32, newValue));
+                        params[paramName] = newValue;
+                    } else if (paramName === 'volume' || paramName === 'sustain' || paramName === 'bitcrushMix') {
+                        // 这些参数：线性变化 (0-1)
+                        newValue = startValue + deltaY / 200;
+                        newValue = Math.max(0, Math.min(1, newValue));
+                        params[paramName] = newValue;
+                    } else {
+                        // 时间参数：线性变化 (0.01-2秒)
+                        newValue = startValue + deltaY / 100;
+                        newValue = Math.max(0.01, Math.min(2, newValue));
+                        params[paramName] = newValue;
+                    }
+                    
+                    // 更新旋钮指示器位置
+                    updateKnobPosition(indicator, paramName);
+                    // 更新数值显示
+                    updateValueDisplay(valueDisplay, paramName);
+                };
+                
+                // 鼠标释放事件
+                const mouseUpHandler = () => {
+                    if (isDragging) {
+                        isDragging = false;
+                        knob.style.cursor = 'pointer';
+                    }
+                };
+                
+                document.addEventListener('mousemove', mouseMoveHandler);
+                document.addEventListener('mouseup', mouseUpHandler);
+                
+                // 防止拖拽时选择文本
+                knob.addEventListener('selectstart', (e) => {
+                    e.preventDefault();
+                });
+            });
+        }
+        
+        // 更新旋钮位置
+        function updateKnobPosition(indicator, paramName) {
+            const value = params[paramName];
+            let angle;
+            
+            // 根据参数类型计算旋转角度
+            if (paramName.includes('FreqRatio')) {
+                // 频率比率：0.1-10 对应 -135 到 135 度 (对数变化)
+                const normalized = (Math.log(value) - Math.log(0.1)) / (Math.log(10) - Math.log(0.1));
+                angle = -135 + normalized * 270;
+            } else if (paramName === 'modulationIndex') {
+                // 调制指数：0-20 对应 -135 到 135 度
+                angle = -135 + (value / 20) * 270;
+            } else if (paramName === 'bitcrush') {
+                // BitCrush强度：1-32 对应 -135 到 135 度 (对数变化)
+                const normalized = (Math.log(value) - Math.log(1)) / (Math.log(32) - Math.log(1));
+                angle = -135 + normalized * 270;
+            } else if (paramName === 'volume' || paramName === 'sustain' || paramName === 'bitcrushMix') {
+                // 这些参数：0-1 对应 -135 到 135 度
+                angle = -135 + value * 270;
+            } else {
+                // 时间参数：0.01-2 对应 -135 到 135 度 (对数变化)
+                const normalized = (Math.log(value) - Math.log(0.01)) / (Math.log(2) - Math.log(0.01));
+                angle = -135 + normalized * 270;
+            }
+            
+            // 限制角度范围
+            angle = Math.max(-135, Math.min(135, angle));
+            indicator.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+        }
+        
+        // 更新数值显示
+        function updateValueDisplay(valueDisplay, paramName) {
+            const value = params[paramName];
+            
+            if (paramName.includes('FreqRatio')) {
+                valueDisplay.textContent = value.toFixed(2);
+            } else if (paramName === 'modulationIndex') {
+                valueDisplay.textContent = value.toFixed(1);
+            } else if (paramName === 'bitcrush') {
+                valueDisplay.textContent = value.toFixed(0) + ' bits';
+            } else if (paramName === 'volume' || paramName === 'sustain' || paramName === 'bitcrushMix') {
+                valueDisplay.textContent = value.toFixed(2);
+            } else {
+                valueDisplay.textContent = value.toFixed(2) + ' s';
+            }
+        }
+        
+        // 初始化键盘事件
+        function initKeyboard() {
+            // 屏幕键盘事件
+            const keys = document.querySelectorAll('.key');
+            keys.forEach(key => {
+                key.addEventListener('mousedown', () => {
+                    const note = key.getAttribute('data-note');
+                    const voiceId = playNote(note);
+                    key.classList.add('active');
+                    
+                    // 存储声音ID以便释放
+                    key.setAttribute('data-voice', voiceId);
+                });
+                
+                key.addEventListener('mouseup', () => {
+                    const voiceId = key.getAttribute('data-voice');
+                    if (voiceId) {
+                        stopNote(voiceId);
+                        key.removeAttribute('data-voice');
+                    }
+                    key.classList.remove('active');
+                });
+                
+                key.addEventListener('mouseleave', () => {
+                    key.classList.remove('active');
+                });
+            });
+            
+            // 电脑键盘事件
+            document.addEventListener('keydown', (e) => {
+                const key = e.key.toLowerCase();
+                if (keyMap[key] && !e.repeat) {
+                    const note = keyMap[key];
+                    const voiceId = playNote(note);
+                    
+                    // 标记键为按下状态
+                    const keyElement = document.querySelector(`.key[data-note="${note}"]`);
+                    if (keyElement) {
+                        keyElement.classList.add('active');
+                        keyElement.setAttribute('data-voice', voiceId);
+                    }
+                    
+                    // 防止浏览器默认行为
+                    e.preventDefault();
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                const key = e.key.toLowerCase();
+                if (keyMap[key]) {
+                    const note = keyMap[key];
+                    
+                    // 停止音符
+                    const keyElement = document.querySelector(`.key[data-note="${note}"]`);
+                    if (keyElement) {
+                        const voiceId = keyElement.getAttribute('data-voice');
+                        if (voiceId) {
+                            stopNote(voiceId);
+                            keyElement.removeAttribute('data-voice');
+                        }
+                        keyElement.classList.remove('active');
+                    }
+                }
+            });
+            
+            // 窗口失去焦点时停止所有音符
+            window.addEventListener('blur', stopAllNotes);
+        }
+        
+        // 初始化预设
+        function initPresets() {
+            const presetButtons = document.querySelectorAll('.preset-btn');
+            
+            presetButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const preset = button.getAttribute('data-preset');
+                    
+                    // 移除所有激活状态
+                    presetButtons.forEach(btn => btn.classList.remove('active'));
+                    // 添加当前激活状态
+                    button.classList.add('active');
+                    
+                    // 应用预设
+                    applyPreset(preset);
+                    
+                    // 播放示例声音
+                    const testId = playNote('A4', 1.5);
+                });
+            });
+        }
+        
+        // 应用预设
+        function applyPreset(preset) {
+            const presetValues = {
+                bell: {
+                    carrierFreqRatio: 1.0,
+                    modulatorFreqRatio: 2.0,
+                    modulationIndex: 10.0,
+                    attack: 0.01,
+                    decay: 2.0,
+                    sustain: 0.3,
+                    release: 1.5,
+                    volume: 0.6,
+                    bitcrush: 16,
+                    bitcrushMix: 0
+                },
+                bass: {
+                    carrierFreqRatio: 1.0,
+                    modulatorFreqRatio: 0.25,
+                    modulationIndex: 3.0,
+                    attack: 0.05,
+                    decay: 0.3,
+                    sustain: 0.8,
+                    release: 0.4,
+                    volume: 0.8,
+                    bitcrush: 16,
+                    bitcrushMix: 0
+                },
+                lead: {
+                    carrierFreqRatio: 1.0,
+                    modulatorFreqRatio: 1.5,
+                    modulationIndex: 2.0,
+                    attack: 0.1,
+                    decay: 0.2,
+                    sustain: 0.9,
+                    release: 0.3,
+                    volume: 0.7,
+                    bitcrush: 16,
+                    bitcrushMix: 0
+                },
+                pad: {
+                    carrierFreqRatio: 1.0,
+                    modulatorFreqRatio: 0.5,
+                    modulationIndex: 1.5,
+                    attack: 1.0,
+                    decay: 1.5,
+                    sustain: 0.9,
+                    release: 2.0,
+                    volume: 0.5,
+                    bitcrush: 16,
+                    bitcrushMix: 0
+                },
+                pluck: {
+                    carrierFreqRatio: 1.0,
+                    modulatorFreqRatio: 2.0,
+                    modulationIndex: 8.0,
+                    attack: 0.01,
+                    decay: 0.5,
+                    sustain: 0.1,
+                    release: 0.3,
+                    volume: 0.7,
+                    bitcrush: 16,
+                    bitcrushMix: 0
+                },
+                lofi: {
+                    carrierFreqRatio: 1.0,
+                    modulatorFreqRatio: 0.7,
+                    modulationIndex: 3.0,
+                    attack: 0.05,
+                    decay: 0.5,
+                    sustain: 0.6,
+                    release: 0.8,
+                    volume: 0.6,
+                    bitcrush: 4,
+                    bitcrushMix: 0.8
+                }
+            };
+            
+            if (presetValues[preset]) {
+                // 更新参数
+                Object.keys(presetValues[preset]).forEach(key => {
+                    params[key] = presetValues[preset][key];
+                });
+                
+                // 更新所有旋钮显示
+                updateAllKnobDisplays();
+            }
+        }
+        
+        // 更新所有旋钮显示
+        function updateAllKnobDisplays() {
+            // 参数到控件的映射
+            const paramToControlMap = {
+                'carrierFreqRatio': 'carrier-freq-ratio',
+                'modulatorFreqRatio': 'modulator-freq-ratio',
+                'modulationIndex': 'modulation-index',
+                'attack': 'attack',
+                'decay': 'decay',
+                'sustain': 'sustain',
+                'release': 'release',
+                'volume': 'volume',
+                'bitcrush': 'bitcrush',
+                'bitcrushMix': 'bitcrush-mix'
+            };
+            
+            Object.keys(paramToControlMap).forEach(paramName => {
+                const controlId = paramToControlMap[paramName];
+                const controlGroup = document.getElementById(`${controlId}-control`);
+                if (controlGroup) {
+                    const valueDisplay = controlGroup.querySelector('.control-value');
+                    const indicator = controlGroup.querySelector('.knob-indicator');
+                    
+                    // 更新数值显示
+                    updateValueDisplay(valueDisplay, paramName);
+                    
+                    // 更新旋钮位置
+                    updateKnobPosition(indicator, paramName);
+                }
+            });
+        }
+        
+        // 初始化测试按钮
+        function initTestButton() {
+            const testBtn = document.getElementById('play-test-btn');
+            testBtn.addEventListener('click', () => {
+                playNote('A4', 1.5);
+            });
+        }
+        
+        // 页面加载完成时初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initAudio();
+            initKnobs();
+            initKeyboard();
+            initPresets();
+            initTestButton();
+            
+            // 默认激活"主奏音色"预设
+            document.querySelector('.preset-btn[data-preset="lead"]').classList.add('active');
+            
+            console.log("FM合成器已初始化，可以使用键盘或屏幕键盘演奏");
+            console.log("修复内容：");
+            console.log("1. 修复了旋钮参数映射问题，现在所有旋钮都能正确调整");
+            console.log("2. 修复了键盘演奏音高问题，现在能正确发出不同音符的音高");
+            console.log("3. 添加了BitCrush效果器，可调节低保真音效");
+        });
+    </script>
+</body>
+</html>

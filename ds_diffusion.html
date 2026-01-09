@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>反应扩散模拟 - 图灵斑图生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a12;
+            color: #e0e0ff;
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #ff00ff;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            background: linear-gradient(90deg, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            color: #a0a0ff;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            min-width: 500px;
+            background: rgba(0, 0, 20, 0.7);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #00ffff;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.3);
+            position: relative;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 500px;
+            image-rendering: pixelated;
+        }
+        
+        .performance {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #00ff00;
+        }
+        
+        .controls {
+            flex: 0 0 350px;
+            background: rgba(20, 0, 30, 0.8);
+            border-radius: 12px;
+            padding: 25px;
+            border: 2px solid #ff00ff;
+            box-shadow: 0 0 25px rgba(255, 0, 255, 0.3);
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+        }
+        
+        h2 {
+            color: #ffcc00;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #4444aa;
+        }
+        
+        .slider-container {
+            margin-bottom: 18px;
+        }
+        
+        label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .slider-value {
+            color: #00ffff;
+            font-weight: bold;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 10px;
+            -webkit-appearance: none;
+            background: linear-gradient(90deg, #000033, #330033);
+            border-radius: 5px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ff00ff;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 8px rgba(255, 0, 255, 0.8);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ff00ff;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 8px rgba(255, 0, 255, 0.8);
+        }
+        
+        .text-input-container {
+            margin-top: 20px;
+        }
+        
+        .text-input-container input {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(0, 0, 40, 0.8);
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+        
+        .text-input-container input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .primary-btn {
+            background: linear-gradient(45deg, #ff00ff, #9900ff);
+            color: white;
+        }
+        
+        .secondary-btn {
+            background: linear-gradient(45deg, #00ffff, #0099ff);
+            color: #000;
+        }
+        
+        .reset-btn {
+            background: linear-gradient(45deg, #ff9900, #ff3300);
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(0, 0, 0, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .presets {
+            margin-top: 25px;
+        }
+        
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .preset-btn {
+            padding: 10px;
+            background: rgba(0, 40, 80, 0.6);
+            border: 1px solid #4444ff;
+            color: #a0a0ff;
+            font-size: 0.9rem;
+        }
+        
+        .preset-btn:hover {
+            background: rgba(60, 0, 100, 0.8);
+            border-color: #ff00ff;
+            color: #ffffff;
+        }
+        
+        footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #333355;
+            color: #8888cc;
+            font-size: 0.9rem;
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 20, 40, 0.6);
+            border-radius: 8px;
+            border-left: 4px solid #ffcc00;
+        }
+        
+        .instructions h3 {
+            color: #ffcc00;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        @media (max-width: 1100px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .canvas-container, .controls {
+                min-width: 100%;
+            }
+            
+            canvas {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>反应扩散模拟器</h1>
+            <p class="subtitle">使用JavaScript模拟图灵斑图生成过程。调整参数或输入文字创建独特的图案。</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="reactionDiffusionCanvas"></canvas>
+                <div class="performance" id="performanceInfo">计算中...</div>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <h2>反应参数</h2>
+                    
+                    <div class="slider-container">
+                        <label>
+                            <span>Feed Rate (F)</span>
+                            <span class="slider-value" id="feedValue">0.055</span>
+                        </label>
+                        <input type="range" id="feedSlider" min="0.01" max="0.07" step="0.001" value="0.055">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label>
+                            <span>Kill Rate (K)</span>
+                            <span class="slider-value" id="killValue">0.062</span>
+                        </label>
+                        <input type="range" id="killSlider" min="0.045" max="0.07" step="0.001" value="0.062">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label>
+                            <span>扩散率 U</span>
+                            <span class="slider-value" id="diffusionUValue">1.0</span>
+                        </label>
+                        <input type="range" id="diffusionUSlider" min="0.5" max="2.0" step="0.05" value="1.0">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label>
+                            <span>扩散率 V</span>
+                            <span class="slider-value" id="diffusionVValue">0.5</span>
+                        </label>
+                        <input type="range" id="diffusionVSlider" min="0.1" max="1.0" step="0.05" value="0.5">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label>
+                            <span>时间步长</span>
+                            <span class="slider-value" id="timeStepValue">1.0</span>
+                        </label>
+                        <input type="range" id="timeStepSlider" min="0.1" max="2.0" step="0.1" value="1.0">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h2>视觉效果</h2>
+                    
+                    <div class="slider-container">
+                        <label>
+                            <span>颜色强度</span>
+                            <span class="slider-value" id="colorIntensityValue">1.0</span>
+                        </label>
+                        <input type="range" id="colorIntensitySlider" min="0.1" max="3.0" step="0.1" value="1.0">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label>
+                            <span>颜色偏移</span>
+                            <span class="slider-value" id="colorOffsetValue">0.0</span>
+                        </label>
+                        <input type="range" id="colorOffsetSlider" min="0.0" max="1.0" step="0.05" value="0.0">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label>
+                            <span>分辨率</span>
+                            <span class="slider-value" id="resolutionValue">150</span>
+                        </label>
+                        <input type="range" id="resolutionSlider" min="50" max="300" step="10" value="150">
+                    </div>
+                </div>
+                
+                <div class="control-group text-input-container">
+                    <h2>文字初始图像</h2>
+                    <input type="text" id="textInput" placeholder="输入文字作为初始图案" maxlength="15" value="TURING">
+                    
+                    <div class="buttons">
+                        <button class="primary-btn" id="applyTextBtn">应用文字</button>
+                        <button class="secondary-btn" id="randomizeBtn">随机图案</button>
+                        <button class="reset-btn" id="resetBtn">重置模拟</button>
+                    </div>
+                </div>
+                
+                <div class="control-group presets">
+                    <h2>预设图案</h2>
+                    <div class="preset-buttons">
+                        <button class="preset-btn" data-preset="spots">斑点</button>
+                        <button class="preset-btn" data-preset="stripes">条纹</button>
+                        <button class="preset-btn" data-preset="maze">迷宫</button>
+                        <button class="preset-btn" data-preset="waves">波浪</button>
+                        <button class="preset-btn" data-preset="cells">细胞</button>
+                        <button class="preset-btn" data-preset="cracks">裂纹</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>使用说明</h3>
+            <ul>
+                <li>调整反应参数（F和K）可以创建不同的图案类型</li>
+                <li>扩散率控制两种化学物质的扩散速度差异</li>
+                <li>输入文字并点击"应用文字"可以将文字作为模拟的初始状态</li>
+                <li>尝试不同的预设可以快速查看各种图灵斑图模式</li>
+                <li>点击画布可以添加干扰，影响图案形成</li>
+                <li>降低分辨率可以提高性能，但会降低图像质量</li>
+            </ul>
+        </div>
+        
+        <footer>
+            <p>反应扩散模拟 | 图灵斑图生成器 | 使用JavaScript实现</p>
+            <p>基于Gray-Scott模型 | 灵感来自Alan Turing的形态发生理论</p>
+        </footer>
+    </div>
+
+    <script>
+        // 反应扩散模拟器 - 使用纯JavaScript实现
+        class ReactionDiffusionSimulator {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                
+                // 模拟参数
+                this.params = {
+                    feedRate: 0.055,
+                    killRate: 0.062,
+                    diffusionU: 1.0,
+                    diffusionV: 0.5,
+                    timeStep: 1.0,
+                    colorIntensity: 1.0,
+                    colorOffset: 0.0,
+                    resolution: 150  // 内部模拟分辨率
+                };
+                
+                // 性能跟踪
+                this.frameCount = 0;
+                this.lastFpsUpdate = Date.now();
+                this.fps = 0;
+                this.lastFrameTime = Date.now();
+                
+                // 状态缓冲区
+                this.u = null;  // U化学物质浓度
+                this.v = null;  // V化学物质浓度
+                this.nextU = null;
+                this.nextV = null;
+                
+                // 初始化
+                this.init();
+                this.initEventListeners();
+                
+                // 开始动画循环
+                this.animationFrameId = null;
+                this.startAnimation();
+            }
+            
+            init() {
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+                
+                // 点击画布添加干扰
+                this.canvas.addEventListener('click', (e) => this.addInteraction(e));
+            }
+            
+            resizeCanvas() {
+                const displayWidth = this.canvas.clientWidth;
+                const displayHeight = this.canvas.clientHeight;
+                
+                if (this.canvas.width !== displayWidth || this.canvas.height !== displayHeight) {
+                    this.canvas.width = displayWidth;
+                    this.canvas.height = displayHeight;
+                    
+                    // 重新初始化状态数组
+                    this.initStateArrays();
+                }
+            }
+            
+            initStateArrays() {
+                const width = Math.floor(this.canvas.width * (this.params.resolution / 300));
+                const height = Math.floor(this.canvas.height * (this.params.resolution / 300));
+                
+                this.width = width;
+                this.height = height;
+                
+                // 创建状态数组
+                this.u = new Float32Array(width * height);
+                this.v = new Float32Array(width * height);
+                this.nextU = new Float32Array(width * height);
+                this.nextV = new Float32Array(width * height);
+                
+                // 初始化状态 - 中心区域有V化学物质
+                for (let i = 0; i < width * height; i++) {
+                    const x = i % width;
+                    const y = Math.floor(i / width);
+                    const dx = x / width - 0.5;
+                    const dy = y / height - 0.5;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    this.u[i] = 1.0; // U初始为1
+                    this.v[i] = (dist < 0.1) ? 0.5 : 0.0; // V在中心区域为0.5
+                }
+                
+                // 添加一些随机扰动
+                for (let i = 0; i < 20; i++) {
+                    const x = Math.floor(Math.random() * width);
+                    const y = Math.floor(Math.random() * height);
+                    const idx = y * width + x;
+                    this.v[idx] = 0.5 + Math.random() * 0.5;
+                }
+            }
+            
+            initEventListeners() {
+                // 绑定参数滑块事件
+                document.getElementById('feedSlider').addEventListener('input', (e) => {
+                    this.params.feedRate = parseFloat(e.target.value);
+                    document.getElementById('feedValue').textContent = this.params.feedRate.toFixed(3);
+                });
+                
+                document.getElementById('killSlider').addEventListener('input', (e) => {
+                    this.params.killRate = parseFloat(e.target.value);
+                    document.getElementById('killValue').textContent = this.params.killRate.toFixed(3);
+                });
+                
+                document.getElementById('diffusionUSlider').addEventListener('input', (e) => {
+                    this.params.diffusionU = parseFloat(e.target.value);
+                    document.getElementById('diffusionUValue').textContent = this.params.diffusionU.toFixed(2);
+                });
+                
+                document.getElementById('diffusionVSlider').addEventListener('input', (e) => {
+                    this.params.diffusionV = parseFloat(e.target.value);
+                    document.getElementById('diffusionVValue').textContent = this.params.diffusionV.toFixed(2);
+                });
+                
+                document.getElementById('timeStepSlider').addEventListener('input', (e) => {
+                    this.params.timeStep = parseFloat(e.target.value);
+                    document.getElementById('timeStepValue').textContent = this.params.timeStep.toFixed(1);
+                });
+                
+                document.getElementById('colorIntensitySlider').addEventListener('input', (e) => {
+                    this.params.colorIntensity = parseFloat(e.target.value);
+                    document.getElementById('colorIntensityValue').textContent = this.params.colorIntensity.toFixed(1);
+                });
+                
+                document.getElementById('colorOffsetSlider').addEventListener('input', (e) => {
+                    this.params.colorOffset = parseFloat(e.target.value);
+                    document.getElementById('colorOffsetValue').textContent = this.params.colorOffset.toFixed(2);
+                });
+                
+                document.getElementById('resolutionSlider').addEventListener('input', (e) => {
+                    this.params.resolution = parseInt(e.target.value);
+                    document.getElementById('resolutionValue').textContent = this.params.resolution;
+                    this.initStateArrays();
+                });
+                
+                // 绑定按钮事件
+                document.getElementById('applyTextBtn').addEventListener('click', () => {
+                    this.applyTextToSimulation();
+                });
+                
+                document.getElementById('randomizeBtn').addEventListener('click', () => {
+                    this.randomizeParameters();
+                });
+                
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.resetSimulation();
+                });
+                
+                // 绑定预设按钮事件
+                document.querySelectorAll('.preset-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const preset = e.target.getAttribute('data-preset');
+                        this.applyPreset(preset);
+                    });
+                });
+                
+                // 文字输入框回车事件
+                document.getElementById('textInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.applyTextToSimulation();
+                    }
+                });
+            }
+            
+            applyTextToSimulation() {
+                const text = document.getElementById('textInput').value || 'TURING';
+                
+                // 创建临时canvas用于绘制文字
+                const textCanvas = document.createElement('canvas');
+                textCanvas.width = this.width;
+                textCanvas.height = this.height;
+                const textCtx = textCanvas.getContext('2d');
+                
+                // 绘制文字
+                textCtx.fillStyle = '#000';
+                textCtx.fillRect(0, 0, this.width, this.height);
+                
+                textCtx.fillStyle = '#fff';
+                textCtx.font = `bold ${Math.min(this.width, this.height) / 8}px Arial`;
+                textCtx.textAlign = 'center';
+                textCtx.textBaseline = 'middle';
+                textCtx.fillText(text, this.width / 2, this.height / 2);
+                
+                // 获取图像数据
+                const imageData = textCtx.getImageData(0, 0, this.width, this.height);
+                
+                // 应用文字到模拟状态
+                for (let i = 0; i < this.width * this.height; i++) {
+                    const x = i % this.width;
+                    const y = Math.floor(i / this.width);
+                    const idx = (y * this.width + x) * 4;
+                    const brightness = imageData.data[idx] / 255.0;
+                    
+                    this.u[i] = 1.0;
+                    this.v[i] = brightness > 0.1 ? 0.5 : 0.0;
+                }
+            }
+            
+            randomizeParameters() {
+                // 随机生成参数
+                this.params.feedRate = 0.01 + Math.random() * 0.06;
+                this.params.killRate = 0.045 + Math.random() * 0.025;
+                this.params.diffusionU = 0.5 + Math.random() * 1.5;
+                this.params.diffusionV = 0.1 + Math.random() * 0.9;
+                this.params.colorIntensity = 0.5 + Math.random() * 2.5;
+                this.params.colorOffset = Math.random();
+                
+                // 更新滑块和显示值
+                document.getElementById('feedSlider').value = this.params.feedRate;
+                document.getElementById('feedValue').textContent = this.params.feedRate.toFixed(3);
+                
+                document.getElementById('killSlider').value = this.params.killRate;
+                document.getElementById('killValue').textContent = this.params.killRate.toFixed(3);
+                
+                document.getElementById('diffusionUSlider').value = this.params.diffusionU;
+                document.getElementById('diffusionUValue').textContent = this.params.diffusionU.toFixed(2);
+                
+                document.getElementById('diffusionVSlider').value = this.params.diffusionV;
+                document.getElementById('diffusionVValue').textContent = this.params.diffusionV.toFixed(2);
+                
+                document.getElementById('colorIntensitySlider').value = this.params.colorIntensity;
+                document.getElementById('colorIntensityValue').textContent = this.params.colorIntensity.toFixed(1);
+                
+                document.getElementById('colorOffsetSlider').value = this.params.colorOffset;
+                document.getElementById('colorOffsetValue').textContent = this.params.colorOffset.toFixed(2);
+                
+                // 重新初始化状态
+                this.resetSimulation();
+            }
+            
+            resetSimulation() {
+                this.initStateArrays();
+            }
+            
+            applyPreset(preset) {
+                // 根据预设设置参数
+                switch(preset) {
+                    case 'spots':
+                        this.params.feedRate = 0.035;
+                        this.params.killRate = 0.065;
+                        break;
+                    case 'stripes':
+                        this.params.feedRate = 0.025;
+                        this.params.killRate = 0.055;
+                        break;
+                    case 'maze':
+                        this.params.feedRate = 0.029;
+                        this.params.killRate = 0.057;
+                        break;
+                    case 'waves':
+                        this.params.feedRate = 0.018;
+                        this.params.killRate = 0.051;
+                        break;
+                    case 'cells':
+                        this.params.feedRate = 0.022;
+                        this.params.killRate = 0.051;
+                        break;
+                    case 'cracks':
+                        this.params.feedRate = 0.026;
+                        this.params.killRate = 0.051;
+                        break;
+                }
+                
+                // 更新滑块和显示值
+                document.getElementById('feedSlider').value = this.params.feedRate;
+                document.getElementById('feedValue').textContent = this.params.feedRate.toFixed(3);
+                
+                document.getElementById('killSlider').value = this.params.killRate;
+                document.getElementById('killValue').textContent = this.params.killRate.toFixed(3);
+                
+                // 重置模拟以应用新参数
+                this.resetSimulation();
+            }
+            
+            addInteraction(event) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = Math.floor((event.clientX - rect.left) / this.canvas.width * this.width);
+                const y = Math.floor((event.clientY - rect.top) / this.canvas.height * this.height);
+                
+                // 在点击位置添加干扰
+                const radius = 5;
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        
+                        if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+                            const idx = ny * this.width + nx;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            if (dist <= radius) {
+                                this.v[idx] = 0.8;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            startAnimation() {
+                const animate = () => {
+                    const startTime = Date.now();
+                    
+                    // 执行模拟步骤
+                    this.stepSimulation();
+                    
+                    // 渲染到画布
+                    this.render();
+                    
+                    // 更新性能信息
+                    this.updatePerformanceInfo(startTime);
+                    
+                    // 继续动画循环
+                    this.animationFrameId = requestAnimationFrame(animate);
+                };
+                
+                this.animationFrameId = requestAnimationFrame(animate);
+            }
+            
+            stepSimulation() {
+                const width = this.width;
+                const height = this.height;
+                const feed = this.params.feedRate;
+                const kill = this.params.killRate;
+                const du = this.params.diffusionU;
+                const dv = this.params.diffusionV;
+                const dt = this.params.timeStep;
+                
+                // 计算拉普拉斯算子（扩散）的卷积核
+                const laplacianKernel = [
+                    [0.05, 0.2, 0.05],
+                    [0.2, -1.0, 0.2],
+                    [0.05, 0.2, 0.05]
+                ];
+                
+                // 对每个像素应用反应扩散方程
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const idx = y * width + x;
+                        
+                        // 计算拉普拉斯算子
+                        let laplaceU = 0;
+                        let laplaceV = 0;
+                        
+                        for (let ky = -1; ky <= 1; ky++) {
+                            for (let kx = -1; kx <= 1; kx++) {
+                                const nx = x + kx;
+                                const ny = y + ky;
+                                
+                                // 边界处理：使用最近的有效像素
+                                const clampedX = Math.max(0, Math.min(width - 1, nx));
+                                const clampedY = Math.max(0, Math.min(height - 1, ny));
+                                const neighborIdx = clampedY * width + clampedX;
+                                
+                                const weight = laplacianKernel[ky + 1][kx + 1];
+                                laplaceU += this.u[neighborIdx] * weight;
+                                laplaceV += this.v[neighborIdx] * weight;
+                            }
+                        }
+                        
+                        // Gray-Scott反应扩散方程
+                        const u = this.u[idx];
+                        const v = this.v[idx];
+                        const uvv = u * v * v;
+                        
+                        const duVal = du * laplaceU - uvv + feed * (1.0 - u);
+                        const dvVal = dv * laplaceV + uvv - (feed + kill) * v;
+                        
+                        // 欧拉积分
+                        this.nextU[idx] = Math.max(0, Math.min(1, u + duVal * dt));
+                        this.nextV[idx] = Math.max(0, Math.min(1, v + dvVal * dt));
+                    }
+                }
+                
+                // 交换缓冲区
+                [this.u, this.nextU] = [this.nextU, this.u];
+                [this.v, this.nextV] = [this.nextV, this.v];
+            }
+            
+            render() {
+                const ctx = this.ctx;
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+                
+                // 创建图像数据
+                const imageData = ctx.createImageData(width, height);
+                const data = imageData.data;
+                
+                // 计算缩放因子
+                const scaleX = this.width / width;
+                const scaleY = this.height / height;
+                
+                // 颜色参数
+                const intensity = this.params.colorIntensity;
+                const offset = this.params.colorOffset;
+                
+                // 填充像素
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        // 在内部分辨率网格中采样
+                        const sampleX = Math.floor(x * scaleX);
+                        const sampleY = Math.floor(y * scaleY);
+                        const idx = sampleY * this.width + sampleX;
+                        
+                        const u = this.u[idx];
+                        const v = this.v[idx];
+                        
+                        // 使用UV值创建彩色图案
+                        const r = Math.sin((u + v) * Math.PI * 2.0 * intensity + offset) * 0.5 + 0.5;
+                        const g = Math.sin((u - v) * Math.PI * 2.0 * intensity + offset + 1.047) * 0.5 + 0.5;
+                        const b = Math.sin((v - u * 0.5) * Math.PI * 2.0 * intensity + offset + 2.094) * 0.5 + 0.5;
+                        
+                        const pixelIndex = (y * width + x) * 4;
+                        data[pixelIndex] = Math.floor(r * 255);     // R
+                        data[pixelIndex + 1] = Math.floor(g * 255); // G
+                        data[pixelIndex + 2] = Math.floor(b * 255); // B
+                        data[pixelIndex + 3] = 255;                 // A
+                    }
+                }
+                
+                // 绘制到画布
+                ctx.putImageData(imageData, 0, 0);
+            }
+            
+            updatePerformanceInfo(startTime) {
+                this.frameCount++;
+                const now = Date.now();
+                
+                // 每秒更新一次FPS
+                if (now - this.lastFpsUpdate >= 1000) {
+                    this.fps = this.frameCount;
+                    this.frameCount = 0;
+                    this.lastFpsUpdate = now;
+                    
+                    const frameTime = now - this.lastFrameTime;
+                    this.lastFrameTime = now;
+                    
+                    document.getElementById('performanceInfo').textContent = 
+                        `FPS: ${this.fps} | 分辨率: ${this.width}x${this.height}`;
+                }
+            }
+        }
+        
+        // 页面加载完成后初始化模拟器
+        window.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('reactionDiffusionCanvas');
+            const simulator = new ReactionDiffusionSimulator(canvas);
+        });
+    </script>
+</body>
+</html>

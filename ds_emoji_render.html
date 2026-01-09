@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji渲染与导出工具</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .emoji-grid-container {
+            flex: 3;
+            min-width: 300px;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+
+        .preview-container {
+            flex: 2;
+            min-width: 300px;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #4a4a4a;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: #6a11cb;
+        }
+
+        .emoji-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .emoji-input:focus {
+            outline: none;
+            border-color: #6a11cb;
+            box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .emoji-item {
+            font-size: 2rem;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .emoji-item:hover {
+            background-color: #f0f0f0;
+            transform: scale(1.1);
+        }
+
+        .emoji-item.selected {
+            background-color: #e6d8ff;
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(106, 17, 203, 0.2);
+        }
+
+        .preview-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+            border-radius: 10px;
+            background: #f9f9f9;
+            margin-bottom: 25px;
+        }
+
+        .preview-emoji {
+            font-size: 12rem;
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+            text-align: center;
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-info {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        .preview-info .code {
+            font-family: monospace;
+            background: #eee;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        .size-selection {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .size-option {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 8px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .size-option:hover {
+            background: #eaeaea;
+        }
+
+        .size-option.selected {
+            background: #6a11cb;
+            color: white;
+            border-color: #6a11cb;
+        }
+
+        .size-option .size {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .size-option .desc {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .export-btn {
+            padding: 18px;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.3);
+        }
+
+        .export-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(106, 17, 203, 0.4);
+        }
+
+        .export-btn:active {
+            transform: translateY(0);
+        }
+
+        .export-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.5s;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .emoji-grid {
+                grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+                max-height: 400px;
+            }
+            
+            .emoji-item {
+                font-size: 1.8rem;
+                width: 45px;
+                height: 45px;
+            }
+            
+            .preview-emoji {
+                font-size: 8rem;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .size-option {
+                min-width: 80px;
+                padding: 10px 5px;
+            }
+            
+            .size-option .size {
+                font-size: 1rem;
+            }
+            
+            .size-option .desc {
+                font-size: 0.75rem;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .input-hint {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: -15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-smile"></i> Emoji渲染与导出工具</h1>
+            <p class="subtitle">输入任何Emoji进行预览，或从列表中选择，然后导出为透明背景的PNG图片，支持多种尺寸选择。</p>
+        </header>
+
+        <div class="main-content">
+            <div class="emoji-grid-container">
+                <h2 class="section-title"><i class="fas fa-th-large"></i> 常用Emoji表情</h2>
+                <input type="text" class="emoji-input" id="emojiInput" placeholder="输入emoji以预览和导出..." value="😊">
+                <p class="input-hint">可以直接输入任何Emoji，即使不在下方列表中</p>
+                <div class="emoji-grid" id="emojiGrid">
+                    <div class="loading">正在加载Emoji...</div>
+                </div>
+            </div>
+
+            <div class="preview-container">
+                <h2 class="section-title"><i class="fas fa-search-plus"></i> 预览与导出</h2>
+                <div class="preview-area">
+                    <div class="preview-emoji" id="previewEmoji">😊</div>
+                    <div class="preview-info">
+                        <p>当前选择的Emoji</p>
+                        <div class="code" id="emojiCode">U+1F60A</div>
+                    </div>
+                </div>
+
+                <h3 class="section-title"><i class="fas fa-expand-alt"></i> 选择导出尺寸</h3>
+                <div class="size-selection">
+                    <div class="size-option selected" data-size="1024">
+                        <div class="size">1024×1024</div>
+                        <div class="desc">高清大图</div>
+                    </div>
+                    <div class="size-option" data-size="512">
+                        <div class="size">512×512</div>
+                        <div class="desc">中等尺寸</div>
+                    </div>
+                    <div class="size-option" data-size="256">
+                        <div class="size">256×256</div>
+                        <div class="desc">通用图标</div>
+                    </div>
+                    <div class="size-option" data-size="128">
+                        <div class="size">128×128</div>
+                        <div class="desc">小尺寸</div>
+                    </div>
+                    <div class="size-option" data-size="64">
+                        <div class="size">64×64</div>
+                        <div class="desc">迷你图标</div>
+                    </div>
+                </div>
+
+                <button class="export-btn" id="exportBtn">
+                    <i class="fas fa-download"></i> 导出为透明PNG
+                </button>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2025  101-Studio</p>
+        </footer>
+    </div>
+
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span>Emoji已成功导出！</span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 扩展的Emoji范围（Unicode代码点）
+            const emojiRanges = [
+                // 表情符号
+                [0x1F600, 0x1F64F], // 表情符号
+                // 杂项符号和图形
+                [0x1F300, 0x1F5FF], // 杂项符号和图形
+                // 交通和地图符号
+                [0x1F680, 0x1F6FF], // 交通和地图符号
+                // 补充符号和图形
+                [0x1F900, 0x1F9FF], // 补充符号和图形
+                // 杂项符号
+                [0x2600, 0x26FF],   // 杂项符号
+                // 装饰符号
+                [0x2700, 0x27BF],   // 装饰符号
+                // 箭头符号
+                [0x2190, 0x21FF],   // 箭头符号
+                // 几何图形
+                [0x25A0, 0x25FF],   // 几何图形
+                // 拉丁字母补充
+                [0x1F100, 0x1F1FF], // 带圈字母数字补充
+                // 货币符号
+                [0x20A0, 0x20CF],   // 货币符号
+                // 数字形式
+                [0x2150, 0x218F],   // 数字形式
+                // 字母符号
+                [0x1F110, 0x1F16F], // 带圈字母
+                // 星座符号
+                [0x2648, 0x2653],   // 星座符号
+                // 棋牌符号
+                [0x1F0A0, 0x1F0FF], // 扑克牌符号
+                // 天气符号
+                [0x2600, 0x2604],   // 天气符号
+                // 警告符号
+                [0x26A0, 0x26FF],   // 警告和医疗符号
+            ];
+
+            const emojiGrid = document.getElementById('emojiGrid');
+            const emojiInput = document.getElementById('emojiInput');
+            const previewEmoji = document.getElementById('previewEmoji');
+            const emojiCode = document.getElementById('emojiCode');
+            const exportBtn = document.getElementById('exportBtn');
+            const sizeOptions = document.querySelectorAll('.size-option');
+            const notification = document.getElementById('notification');
+            
+            let selectedEmoji = '😊';
+            let selectedSize = 1024;
+            let allEmojis = [];
+
+            // 生成Emoji列表
+            function generateEmojiList() {
+                emojiGrid.innerHTML = '';
+                allEmojis = [];
+                
+                emojiRanges.forEach(range => {
+                    const [start, end] = range;
+                    for (let i = start; i <= end; i++) {
+                        // 跳过一些不可见的或控制字符
+                        if ((i >= 0x1F600 && i <= 0x1F64F) || 
+                            (i >= 0x1F300 && i <= 0x1F5FF) || 
+                            (i >= 0x1F680 && i <= 0x1F6FF) ||
+                            (i >= 0x2600 && i <= 0x26FF) ||
+                            (i >= 0x2700 && i <= 0x27BF) ||
+                            (i >= 0x2190 && i <= 0x21FF) ||
+                            (i >= 0x25A0 && i <= 0x25FF) ||
+                            (i >= 0x1F100 && i <= 0x1F1FF && (i <= 0x1F10F || i >= 0x1F170)) ||
+                            (i >= 0x20A0 && i <= 0x20CF) ||
+                            (i >= 0x2150 && i <= 0x218F) ||
+                            (i >= 0x1F110 && i <= 0x1F16F) ||
+                            (i >= 0x2648 && i <= 0x2653) ||
+                            (i >= 0x1F0A0 && i <= 0x1F0FF) ||
+                            (i >= 0x2600 && i <= 0x2604) ||
+                            (i >= 0x26A0 && i <= 0x26FF)) {
+                            
+                            try {
+                                const emoji = String.fromCodePoint(i);
+                                // 检查是否是有效字符
+                                if (emoji && emoji.trim() !== '') {
+                                    allEmojis.push({
+                                        emoji: emoji,
+                                        code: `U+${i.toString(16).toUpperCase()}`
+                                    });
+                                }
+                            } catch (e) {
+                                // 忽略无效的代码点
+                            }
+                        }
+                    }
+                });
+
+                // 去重并限制数量
+                const uniqueEmojis = [];
+                const seen = new Set();
+                
+                for (const item of allEmojis) {
+                    if (!seen.has(item.emoji)) {
+                        seen.add(item.emoji);
+                        uniqueEmojis.push(item);
+                    }
+                }
+                
+                // 增加一些特别常用的emoji（确保它们被包含）
+                const additionalEmojis = [
+                    "😂", "❤️", "👍", "🔥", "🥰", "🤣", "✨", "⭐", "🌟", "🎉",
+                    "🎂", "🎈", "🎁", "🏆", "⚽", "🏀", "🎮", "💻", "📱", "📷",
+                    "🎵", "🎶", "🎬", "📺", "🍎", "🍕", "☕", "🚗", "✈️", "🌍",
+                    "🌈", "🌞", "🌙", "⭐", "💧", "🔥", "💎", "💰", "💡", "🔑",
+                    "📚", "✏️", "🎨", "⚡", "🔋", "💊", "🏠", "🏥", "🏫", "🏪"
+                ];
+                
+                for (const emoji of additionalEmojis) {
+                    if (!seen.has(emoji)) {
+                        uniqueEmojis.push({
+                            emoji: emoji,
+                            code: getEmojiCodePoint(emoji)
+                        });
+                    }
+                }
+                
+                allEmojis = uniqueEmojis.slice(0, 800); // 增加显示数量
+                
+                renderEmojiGrid(allEmojis);
+            }
+
+            // 获取Emoji的代码点
+            function getEmojiCodePoint(emoji) {
+                if (emoji.length === 0) return 'U+?';
+                
+                let codePoints = [];
+                for (let i = 0; i < emoji.length; i++) {
+                    const codePoint = emoji.codePointAt(i);
+                    if (codePoint > 0xFFFF) {
+                        codePoints.push(codePoint.toString(16).toUpperCase());
+                        i++; // 跳过代理对的高位
+                    } else {
+                        codePoints.push(codePoint.toString(16).toUpperCase());
+                    }
+                }
+                
+                return 'U+' + codePoints.join(' U+');
+            }
+
+            // 渲染Emoji网格
+            function renderEmojiGrid(emojis) {
+                emojiGrid.innerHTML = '';
+                
+                emojis.forEach(item => {
+                    const emojiElement = document.createElement('div');
+                    emojiElement.className = 'emoji-item';
+                    emojiElement.textContent = item.emoji;
+                    emojiElement.title = item.code;
+                    
+                    if (item.emoji === selectedEmoji) {
+                        emojiElement.classList.add('selected');
+                    }
+                    
+                    emojiElement.addEventListener('click', () => {
+                        selectEmoji(item);
+                        // 同时更新输入框
+                        emojiInput.value = item.emoji;
+                    });
+                    
+                    emojiGrid.appendChild(emojiElement);
+                });
+            }
+
+            // 选择Emoji
+            function selectEmoji(item) {
+                selectedEmoji = item.emoji;
+                
+                // 更新预览区域
+                previewEmoji.textContent = selectedEmoji;
+                emojiCode.textContent = item.code || getEmojiCodePoint(selectedEmoji);
+                
+                // 更新选中状态
+                document.querySelectorAll('.emoji-item').forEach(el => {
+                    el.classList.remove('selected');
+                    if (el.textContent === selectedEmoji) {
+                        el.classList.add('selected');
+                    }
+                });
+                
+                // 启用导出按钮
+                exportBtn.disabled = false;
+            }
+
+            // 输入框事件处理
+            emojiInput.addEventListener('input', function() {
+                const inputValue = this.value.trim();
+                
+                if (inputValue.length > 0) {
+                    // 使用输入的Emoji
+                    selectedEmoji = inputValue;
+                    previewEmoji.textContent = selectedEmoji;
+                    emojiCode.textContent = getEmojiCodePoint(selectedEmoji);
+                    
+                    // 更新选中状态
+                    document.querySelectorAll('.emoji-item').forEach(el => {
+                        el.classList.remove('selected');
+                        if (el.textContent === selectedEmoji) {
+                            el.classList.add('selected');
+                        }
+                    });
+                    
+                    // 启用导出按钮
+                    exportBtn.disabled = false;
+                }
+            });
+
+            // 选择尺寸
+            sizeOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    sizeOptions.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedSize = parseInt(this.dataset.size);
+                });
+            });
+
+            // 导出Emoji为PNG
+            exportBtn.addEventListener('click', function() {
+                if (!selectedEmoji) return;
+                
+                // 创建Canvas元素
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // 设置Canvas尺寸
+                canvas.width = selectedSize;
+                canvas.height = selectedSize;
+                
+                // 清空Canvas（确保透明背景）
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 设置字体和文本属性
+                const fontSize = Math.floor(selectedSize * 0.8);
+                ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Android Emoji", "EmojiOne", sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // 绘制Emoji到Canvas中心
+                ctx.fillText(selectedEmoji, canvas.width / 2, canvas.height / 2);
+                
+                // 将Canvas转换为数据URL
+                const dataURL = canvas.toDataURL('image/png');
+                
+                // 创建下载链接
+                const link = document.createElement('a');
+                const code = getEmojiCodePoint(selectedEmoji).replace(/U\+/g, '').replace(/\s+/g, '_').toLowerCase();
+                link.download = `emoji_${code}_${selectedSize}x${selectedSize}.png`;
+                link.href = dataURL;
+                
+                // 触发下载
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // 显示通知
+                showNotification(`已导出 ${selectedEmoji} (${selectedSize}×${selectedSize})`);
+            });
+
+            // 显示通知
+            function showNotification(message) {
+                notification.querySelector('span').textContent = message;
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+
+            // 初始化
+            generateEmojiList();
+        });
+    </script>
+</body>
+</html>
