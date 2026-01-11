@@ -1,0 +1,3416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FC Pixel Drum Sequencer</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+    <style>
+        /* 基础样式 - 保持不变 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            user-select: none; /* 默认所有文字不可选择 */
+        }
+        
+        body {
+            font-family: 'Press Start 2P', cursive, monospace;
+            background-color: #3a3a3a;
+            color: #fff;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow-y: auto; /* 允许用户滚动 */
+        }
+        
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            background-color: #4a4a4a;
+            border: 8px solid #2a2a2a;
+            border-radius: 4px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* 全屏按钮样式 - 保持不变 */
+        .fullscreen-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #4a4a4a;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 12px;
+            border: 3px solid #2a2a2a;
+            transition: all 0.1s;
+            z-index: 1000;
+        }
+        
+        .fullscreen-btn:hover {
+            background-color: #5a5a5a;
+            transform: translateY(-2px);
+        }
+        
+        .fullscreen-btn:active {
+            transform: translateY(1px);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 4px solid #2a2a2a;
+        }
+        
+        h1 {
+            color: #f8d038;
+            text-shadow: 3px 3px 0 #a82a2a;
+            font-size: 28px;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            color: #a8e0f0;
+            font-size: 14px;
+        }
+        
+        /* 控制面板样式 - 保持不变 */
+        .control-panel {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 4px solid #1a1a1a;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .bpm-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap; /* 允许换行 */
+        }
+        
+        .bpm-label {
+            color: #f8d038;
+            font-size: 14px;
+        }
+        
+        .bpm-value {
+            color: #a8e0f0;
+            font-size: 18px;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        /* 自定义滚动条样式 - 保持不变 */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #4a4a4a;
+            border: 2px solid #1a1a1a;
+            border-radius: 2px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #f8d038;
+            border: 2px solid #a82a2a;
+            border-radius: 2px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ffea8c;
+        }
+        
+        /* BPM滑块样式 - 保持不变 */
+        .bpm-slider {
+            -webkit-appearance: none;
+            width: 180px;
+            height: 12px;
+            background: #4a4a4a;
+            border-radius: 2px;
+            border: 2px solid #1a1a1a;
+        }
+        
+        .bpm-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #f8d038;
+            border-radius: 2px;
+            border: 2px solid #a82a2a;
+            cursor: pointer;
+        }
+        
+        .time-signature {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap; /* 允许换行 */
+        }
+        
+        .time-signature-label {
+            color: #f8d038;
+            font-size: 14px;
+        }
+        
+        .time-signature-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .transport-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap; /* 允许换行 */
+        }
+        
+        /* 按钮样式 - 保持不变 */
+        .btn {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #4a4a4a;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 12px;
+            border: 3px solid #2a2a2a;
+            transition: all 0.1s;
+        }
+        
+        .btn:hover {
+            background-color: #5a5a5a;
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn-play {
+            background-color: #3a9e3a;
+            color: #fff;
+        }
+        
+        .btn-stop {
+            background-color: #a82a2a;
+            color: #fff;
+        }
+        
+        .btn-loop {
+            background-color: #8a6df0;
+            color: #fff;
+        }
+        
+        .btn-new {
+            background-color: #55aaff;
+            color: #fff;
+        }
+        
+        .btn-caption {
+            background-color: #e080c0;
+            color: #fff;
+        }
+        
+        .btn-help {
+            background-color: #f8d038;
+            color: #2a2a2a;
+        }
+        
+        .btn.active {
+            background-color: #f8d038;
+            color: #2a2a2a;
+        }
+        
+        /* Block控制样式 - 保持不变 */
+        .block-controls {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 4px solid #1a1a1a;
+        }
+        
+        .block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .block-title {
+            color: #f8d038;
+            font-size: 14px;
+        }
+        
+        .block-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .blocks-list {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background-color: #1a1a1a;
+            border-radius: 2px;
+            overflow-x: auto;
+        }
+        
+        .block-item {
+            min-width: 80px;
+            padding: 10px;
+            background-color: #4a4a4a;
+            border: 2px solid #3a3a3a;
+            border-radius: 2px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.1s;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        
+        .block-item:hover {
+            background-color: #5a5a5a;
+        }
+        
+        .block-item.active {
+            background-color: #f8d038;
+            color: #2a2a2a;
+            border-color: #a82a2a;
+        }
+        
+        /* 音序器网格样式 - 保持不变 */
+        .sequencer-grid {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 4px;
+            border: 4px solid #1a1a1a;
+            margin-bottom: 20px;
+        }
+        
+        .drum-row {
+            display: flex;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+        
+        .drum-label {
+            color: #f8d038;
+            font-size: 12px;
+            width: 140px;
+            text-align: right;
+            padding-right: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .drum-label.muted {
+            color: #ff5555;
+            text-decoration: line-through;
+        }
+        
+        .step-cells {
+            display: flex;
+            flex-grow: 1;
+        }
+        
+        .step-cell {
+            width: 45px;
+            height: 45px;
+            background-color: #4a4a4a;
+            border: 2px solid #3a3a3a;
+            margin-right: 4px;
+            cursor: pointer;
+            transition: all 0.1s;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+        }
+        
+        .step-cell:hover {
+            background-color: #5a5a5a;
+        }
+        
+        .step-cell.active {
+            border-color: #a82a2a;
+        }
+        
+        .step-cell.active.kick {
+            background-color: #f8d038;
+        }
+        
+        .step-cell.active.snare {
+            background-color: #a8e0f0;
+        }
+        
+        .step-cell.active.hihat {
+            background-color: #3a9e3a;
+        }
+        
+        .step-cell.active.openhat {
+            background-color: #a82a2a;
+        }
+        
+        .step-cell.active.clap {
+            background-color: #e080c0;
+        }
+        
+        .step-cell.active.triangle {
+            background-color: #8a6df0;
+        }
+        
+        .step-cell.active.square_a {
+            background-color: #ffaa55;
+        }
+        
+        .step-cell.active.square_b {
+            background-color: #ffcc88;
+        }
+        
+        .step-cell.active.sawtooth {
+            background-color: #55aaff;
+        }
+        
+        .step-cell.active.caption {
+            background-color: #ffffff;
+        }
+        
+        .step-cell.current {
+            box-shadow: 0 0 10px #fff;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .step-cell .note-value {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 8px;
+            color: #000;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 1px 3px;
+            border-radius: 1px;
+            pointer-events: none;
+        }
+        
+        .step-cell .caption-text {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            font-size: 8px;
+            color: #000;
+            pointer-events: none;
+            max-width: 40px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* 可视化区域样式 - 保持不变 */
+        .visualizer {
+            height: 100px;
+            background-color: #1a1a1a;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 4px solid #2a2a2a;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .beat-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7);
+            transition: left 0.1s linear;
+        }
+        
+        .waveform {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            transform: translateY(-50%);
+        }
+        
+        .waveform-bar {
+            position: absolute;
+            bottom: 0;
+            width: 4px;
+            background-color: #a8e0f0;
+            transition: height 0.05s;
+        }
+        
+        /* 趣味可视化区域样式 - 保持不变 */
+        .fun-visualizer {
+            height: 80px;
+            background-color: #1a1a1a;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 4px solid #2a2a2a;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .emoji-char {
+            position: absolute;
+            font-size: 24px;
+            bottom: 0;
+            transition: bottom 0.2s ease-out;
+            filter: drop-shadow(2px 2px 0 #000);
+        }
+        
+        /* 字幕显示区域 - 保持不变 */
+        .caption-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            color: #f8d038;
+            text-shadow: 3px 3px 0 #a82a2a;
+            z-index: 10;
+            max-width: 90%;
+            text-align: center;
+            padding: 10px;
+            display: none;
+        }
+        
+        .caption-display.preview {
+            color: #a8e0f0;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        .caption-display.show {
+            display: block;
+        }
+        
+        /* 高级设置样式 - 保持不变 */
+        .advance-settings {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 4px solid #1a1a1a;
+            display: none;
+        }
+        
+        .advance-settings.active {
+            display: block;
+        }
+        
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .settings-title {
+            color: #f8d038;
+            font-size: 14px;
+        }
+        
+        .settings-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .setting-group {
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: 2px;
+        }
+        
+        .setting-group h3 {
+            color: #a8e0f0;
+            font-size: 12px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #3a3a3a;
+            padding-bottom: 5px;
+        }
+        
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 10px;
+        }
+        
+        .setting-label {
+            color: #ccc;
+            width: 120px;
+        }
+        
+        .setting-value {
+            color: #f8d038;
+            min-width: 40px;
+            text-align: right;
+        }
+        
+        /* 高级设置滑块样式 - 保持不变 */
+        .setting-slider {
+            -webkit-appearance: none;
+            width: 120px;
+            height: 12px;
+            background: #4a4a4a;
+            border-radius: 2px;
+            border: 2px solid #1a1a1a;
+        }
+        
+        .setting-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 2px;
+            border: 2px solid #a82a2a;
+            cursor: pointer;
+        }
+        
+        /* 为不同设置项添加颜色 - 保持不变 */
+        .setting-slider.attack::-webkit-slider-thumb {
+            background: #f8d038;
+        }
+        
+        .setting-slider.decay::-webkit-slider-thumb {
+            background: #a8e0f0;
+        }
+        
+        .setting-slider.tone::-webkit-slider-thumb {
+            background: #3a9e3a;
+        }
+        
+        .setting-slider.noise::-webkit-slider-thumb {
+            background: #a82a2a;
+        }
+        
+        .setting-slider.volume::-webkit-slider-thumb {
+            background: #e080c0;
+        }
+        
+        .setting-slider.delay::-webkit-slider-thumb {
+            background: #8a6df0;
+        }
+        
+        .setting-slider.count::-webkit-slider-thumb {
+            background: #ffaa55;
+        }
+        
+        .setting-slider.duty::-webkit-slider-thumb {
+            background: #55aaff;
+        }
+        
+        .setting-slider.vibrato-speed::-webkit-slider-thumb {
+            background: #ff55aa;
+        }
+        
+        .setting-slider.vibrato-depth::-webkit-slider-thumb {
+            background: #55ffaa;
+        }
+        
+        .setting-slider.vibrato-attack::-webkit-slider-thumb {
+            background: #ffaa55;
+        }
+        
+        .setting-slider.bitcrush::-webkit-slider-thumb {
+            background: #8a6df0; /* 三角波颜色 */
+        }
+        
+        /* 钢琴键盘样式 - 保持不变 */
+        .piano-container {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 4px solid #1a1a1a;
+        }
+        
+        .piano-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .piano-title {
+            color: #f8d038;
+            font-size: 14px;
+        }
+        
+        .piano-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .piano-keyboard {
+            display: flex;
+            height: 80px;
+            position: relative;
+            background-color: #1a1a1a;
+            border-radius: 2px;
+            padding: 5px;
+        }
+        
+        .piano-key {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.1s;
+            font-size: 10px;
+            color: #000;
+            flex: 1;
+            height: 100%;
+            margin-right: 2px;
+            border-radius: 2px;
+        }
+        
+        .piano-key:last-child {
+            margin-right: 0;
+        }
+        
+        .white-key {
+            background-color: #fff;
+            border: 2px solid #ccc;
+        }
+        
+        .white-key:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .white-key.active {
+            background-color: #f8d038;
+            border-color: #a82a2a;
+        }
+        
+        .black-key {
+            background-color: #333;
+            border: 2px solid #222;
+        }
+        
+        .black-key:hover {
+            background-color: #555;
+        }
+        
+        .black-key.active {
+            background-color: #8a6df0;
+            border-color: #a82a2a;
+        }
+        
+        .key-label {
+            pointer-events: none;
+            text-align: center;
+            line-height: 1.2;
+        }
+        
+        /* 歌曲导出区域样式 - 保持不变 */
+        .song-export {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 4px;
+            border: 4px solid #1a1a1a;
+        }
+        
+        .song-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .song-title {
+            color: #f8d038;
+            font-size: 14px;
+        }
+        
+        .song-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-label {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #4a4a4a;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 12px;
+            border: 3px solid #2a2a2a;
+            transition: all 0.1s;
+            display: inline-block;
+        }
+        
+        .file-label:hover {
+            background-color: #5a5a5a;
+            transform: translateY(-2px);
+        }
+        
+        .file-label:active {
+            transform: translateY(1px);
+        }
+        
+        /* 全屏模式下的样式调整 - 保持不变 */
+        body:fullscreen {
+            padding: 0;
+            background-color: #3a3a3a;
+        }
+        
+        body:fullscreen .container {
+            max-width: 100%;
+            height: 100vh;
+            border: none;
+            border-radius: 0;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        body:fullscreen .fullscreen-btn {
+            top: 10px;
+            right: 10px;
+        }
+        
+        /* 字幕音序器区域 - 保持不变 */
+        .caption-sequencer {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 4px solid #1a1a1a;
+            display: none;
+        }
+        
+        .caption-sequencer.active {
+            display: block;
+        }
+        
+        .caption-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .caption-title {
+            color: #f8d038;
+            font-size: 14px;
+        }
+        
+        .caption-row {
+            display: flex;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+        
+        .caption-label {
+            color: #f8d038;
+            font-size: 12px;
+            width: 140px;
+            text-align: right;
+            padding-right: 20px;
+        }
+        
+        .caption-step-cells {
+            display: flex;
+            flex-grow: 1;
+        }
+        
+        .caption-step-cell {
+            width: 45px;
+            height: 45px;
+            background-color: #4a4a4a;
+            border: 2px solid #3a3a3a;
+            margin-right: 4px;
+            cursor: pointer;
+            transition: all 0.1s;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+        }
+        
+        .caption-step-cell:hover {
+            background-color: #5a5a5a;
+        }
+        
+        .caption-step-cell.active {
+            background-color: #ffffff;
+            border-color: #a82a2a;
+        }
+        
+        .caption-step-cell.current {
+            box-shadow: 0 0 10px #fff;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 帮助窗口样式 - 保持不变 */
+        .help-window {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            max-width: 90%;
+            max-height: 80vh;
+            background-color: #2a2a2a;
+            border: 8px solid #1a1a1a;
+            border-radius: 4px;
+            padding: 20px;
+            z-index: 2000;
+            display: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            overflow-y: auto;
+        }
+        
+        .help-window.active {
+            display: block;
+        }
+        
+        .help-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 4px solid #1a1a1a;
+        }
+        
+        .help-title {
+            color: #f8d038;
+            font-size: 18px;
+            text-shadow: 2px 2px 0 #a82a2a;
+        }
+        
+        .help-close {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2px;
+        }
+        
+        .help-close:hover {
+            background-color: #4a4a4a;
+        }
+        
+        .help-content {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #fff;
+            user-select: text; /* 允许选择帮助文本 */
+        }
+        
+        .help-content h3 {
+            color: #f8d038;
+            margin: 15px 0 10px 0;
+            font-size: 16px;
+        }
+        
+        .help-content ul {
+            margin: 10px 0 10px 20px;
+        }
+        
+        .help-content li {
+            margin-bottom: 8px;
+        }
+        
+        .help-content p {
+            margin-bottom: 10px;
+        }
+        
+        .help-content code {
+            background-color: #4a4a4a;
+            padding: 2px 5px;
+            border-radius: 2px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .help-content .credits {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #1a1a1a;
+            color: #a8e0f0;
+            font-style: italic;
+        }
+        
+        /* 遮罩层样式 - 保持不变 */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1500;
+            display: none;
+        }
+        
+        .overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 全屏按钮 -->
+    <button class="fullscreen-btn" id="fullscreenBtn">FULLSCREEN</button>
+    
+    <!-- 帮助窗口遮罩层 -->
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- 帮助窗口 -->
+    <div class="help-window" id="helpWindow">
+        <div class="help-header">
+            <div class="help-title">FC高级鼓机音序器 使用帮助</div>
+            <button class="help-close" id="helpClose">×</button>
+        </div>
+        <div class="help-content" id="helpContent">
+            <h3>软件简介</h3>
+            <p>FC高级鼓机音序器是一款复古FC/Nintendo风格的鼓机和合成器音序器，灵感来源于经典的芯片音乐。</p>
+            
+            <h3>基本操作</h3>
+            <ul>
+                <li><strong>播放/暂停</strong>：点击▶ PLAY按钮或按空格键</li>
+                <li><strong>停止</strong>：点击■ STOP按钮或按ESC键</li>
+                <li><strong>循环模式</strong>：点击LOOP按钮或按左Ctrl键</li>
+                <li><strong>BPM调整</strong>：使用BPM滑块调整节奏速度</li>
+                <li><strong>拍号切换</strong>：4/4拍或6/8拍</li>
+            </ul>
+            
+            <h3>音序器使用</h3>
+            <ul>
+                <li><strong>放置/移除音符</strong>：点击网格中的格子</li>
+                <li><strong>调整音高</strong>：右键点击音高轨道格子应用选中的音符</li>
+                <li><strong>吸取音高</strong>：Shift+左键点击已激活的音符格子</li>
+                <li><strong>静音轨道</strong>：点击轨道名称切换静音状态</li>
+            </ul>
+            
+            <h3>钢琴键盘</h3>
+            <ul>
+                <li><strong>选择音符</strong>：点击钢琴键盘上的琴键</li>
+                <li><strong>调整八度</strong>：使用+/- OCTAVE按钮或Z/X键</li>
+                <li><strong>调整半音</strong>：使用Q/W键降低/升高半音</li>
+            </ul>
+            
+            <h3>Pattern管理</h3>
+            <ul>
+                <li><strong>添加Pattern</strong>：点击+ ADD按钮</li>
+                <li><strong>复制Pattern</strong>：点击COPY按钮</li>
+                <li><strong>重命名Pattern</strong>：点击RENAME按钮</li>
+                <li><strong>移动Pattern</strong>：使用◀ MOVE和MOVE ▶按钮</li>
+                <li><strong>删除Pattern</strong>：点击- REMOVE按钮</li>
+                <li><strong>切换Pattern</strong>：点击Pattern列表中的项目或使用左右箭头键</li>
+            </ul>
+            
+            <h3>字幕音序器</h3>
+            <ul>
+                <li><strong>显示/隐藏</strong>：点击CAPTION按钮或按Ctrl+C</li>
+                <li><strong>放置/移除字幕</strong>：左键点击字幕格子</li>
+                <li><strong>编辑字幕</strong>：右键点击字幕格子输入文字（支持空格）</li>
+                <li><strong>预览字幕</strong>：鼠标悬停在字幕格子上预览</li>
+                <li><strong>字幕显示</strong>：播放时，字幕会在趣味显示器中显示（仅在字幕音序器打开时可见）</li>
+            </ul>
+            
+            <h3>高级设置</h3>
+            <ul>
+                <li><strong>显示/隐藏</strong>：点击ADVANCE按钮</li>
+                <li><strong>参数调整</strong>：每个轨道都有独立的参数控制</li>
+                <li><strong>颤音效果</strong>：旋律轨道可调整颤音速度、深度和attack时间</li>
+                <li><strong>位压效果</strong>：三角波轨道有BITCRUSH控制，可模拟8位游戏机音质</li>
+            </ul>
+            
+            <h3>文件操作</h3>
+            <ul>
+                <li><strong>新建工程</strong>：点击NEW按钮或按Ctrl+N</li>
+                <li><strong>清除当前Pattern</strong>：点击CLEAR按钮</li>
+                <li><strong>导出歌曲</strong>：点击EXPORT SONG按钮</li>
+                <li><strong>导入歌曲</strong>：点击IMPORT SONG按钮选择.song文件</li>
+            </ul>
+            
+            <h3>其他功能</h3>
+            <ul>
+                <li><strong>全屏模式</strong>：点击FULLSCREEN按钮或按F键</li>
+                <li><strong>趣味可视化</strong>：播放时会显示👾表情动画</li>
+                <li><strong>波形可视化</strong>：实时显示音频波形</li>
+            </ul>
+            
+            <h3>键盘快捷键</h3>
+            <ul>
+                <li><code>空格键</code> - 播放/暂停</li>
+                <li><code>ESC</code> - 停止播放</li>
+                <li><code>左Ctrl</code> - 切换循环模式</li>
+                <li><code>左右箭头</code> - 切换Pattern</li>
+                <li><code>Z/X</code> - 降低/提高八度</li>
+                <li><code>Q/W</code> - 降低/升高半音</li>
+                <li><code>F</code> - 切换全屏</li>
+                <li><code>Ctrl+N</code> - 新建工程</li>
+                <li><code>Ctrl+C</code> - 切换字幕音序器</li>
+                <li><code>Ctrl+H</code> - 切换帮助窗口</li>
+                <li><code>1-7数字键</code> - 选择钢琴键盘白键</li>
+            </ul>
+            
+            <div class="credits">
+                <p>FC Advanced Drum Sequencer</p>
+                <p>Created by FJZ with assistance from Deepseek</p>
+                <p>Version 1.3 - 新增三角波Buffer和Bitcrush效果</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- 标题区域 -->
+        <div class="header">
+            <h1>FC ADVANCED DRUM SEQUENCER</h1>
+            <div class="subtitle">RETRO NINTENDO-STYLE DRUM & SYNTH SEQUENCER</div>
+        </div>
+        
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <div class="bpm-control">
+                <div class="bpm-label">BPM:</div>
+                <div class="bpm-value">120</div>
+                <input type="range" min="60" max="200" value="120" class="bpm-slider" id="bpmSlider">
+            </div>
+            
+            <div class="time-signature">
+                <div class="time-signature-label">TIME SIG:</div>
+                <div class="time-signature-buttons">
+                    <button class="btn active" data-time="4">4/4</button>
+                    <button class="btn" data-time="6">6/8</button>
+                </div>
+            </div>
+            
+            <div class="transport-controls">
+                <button class="btn btn-play" id="playBtn">▶ PLAY</button>
+                <button class="btn" id="loopBtn">LOOP</button>
+                <button class="btn btn-stop" id="stopBtn">■ STOP</button>
+                <button class="btn btn-new" id="newBtn">NEW</button>
+                <button class="btn" id="clearBtn">CLEAR</button>
+                <button class="btn" id="advanceBtn">ADVANCE</button>
+                <button class="btn btn-caption" id="captionBtn">CAPTION</button>
+                <button class="btn btn-help" id="helpBtn">HELP</button>
+            </div>
+        </div>
+        
+        <!-- Block控制区域 -->
+        <div class="block-controls">
+            <div class="block-header">
+                <div class="block-title">PATTERN BLOCKS</div>
+                <div class="block-buttons">
+                    <button class="btn" id="addBlockBtn">+ ADD</button>
+                    <button class="btn" id="removeBlockBtn">- REMOVE</button>
+                    <button class="btn" id="duplicateBlockBtn">COPY</button>
+                    <button class="btn" id="renameBlockBtn">RENAME</button>
+                    <button class="btn" id="moveLeftBtn">◀ MOVE</button>
+                    <button class="btn" id="moveRightBtn">MOVE ▶</button>
+                </div>
+            </div>
+            <div class="blocks-list" id="blocksList">
+                <!-- Block列表将通过JS动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 波形可视化区域 -->
+        <div class="visualizer" id="visualizer">
+            <div class="beat-indicator" id="beatIndicator"></div>
+            <div class="waveform" id="waveform"></div>
+        </div>
+        
+        <!-- 趣味可视化区域 -->
+        <div class="fun-visualizer" id="funVisualizer">
+            <div class="caption-display" id="captionDisplay"></div>
+            <!-- 👾 emoji将在这里动态显示 -->
+        </div>
+        
+        <!-- 高级设置区域 -->
+        <div class="advance-settings" id="advanceSettings">
+            <div class="settings-header">
+                <div class="settings-title">ADVANCED SETTINGS</div>
+            </div>
+            <div class="settings-content" id="settingsContent">
+                <!-- 设置内容将通过JS动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 音序器网格 -->
+        <div class="sequencer-grid" id="sequencerGrid">
+            <!-- 音序器网格将通过JS动态生成 -->
+        </div>
+        
+        <!-- 字幕音序器区域 -->
+        <div class="caption-sequencer" id="captionSequencer">
+            <div class="caption-header">
+                <div class="caption-title">CAPTION SEQUENCER (Left-click to place/remove, Right-click to edit text)</div>
+            </div>
+            <div class="caption-row">
+                <div class="caption-label">CAPTION</div>
+                <div class="caption-step-cells" id="captionStepCells">
+                    <!-- 字幕步进格子将通过JS动态生成 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 钢琴键盘区域 -->
+        <div class="piano-container">
+            <div class="piano-header">
+                <div class="piano-title">PIANO KEYBOARD (Right-click cells to apply selected note)</div>
+                <div class="piano-controls">
+                    <button class="btn" id="octaveDownBtn">- OCTAVE</button>
+                    <div class="bpm-value" id="currentOctave">4</div>
+                    <button class="btn" id="octaveUpBtn">+ OCTAVE</button>
+                </div>
+            </div>
+            <div class="piano-keyboard" id="pianoKeyboard">
+                <!-- 钢琴键盘将通过JS动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 歌曲导出区域 -->
+        <div class="song-export">
+            <div class="song-header">
+                <div class="song-title">SONG IMPORT/EXPORT</div>
+                <div class="song-buttons">
+                    <button class="btn" id="exportBtn">EXPORT SONG</button>
+                    <label for="importFile" class="file-label">IMPORT SONG</label>
+                    <input type="file" id="importFile" class="file-input" accept=".song">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化音频上下文
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioContext = new AudioContext();
+        
+        // 全局变量
+        let isPlaying = false;
+        let loopCurrentPattern = false;
+        let currentStep = 0;
+        let currentPatternStep = 0;
+        let bpm = 120;
+        let timerId = null;
+        let timeSignature = 4; // 4/4拍
+        let stepCount = 16; // 基于拍号
+        let currentBlock = 0;
+        let blocks = []; // 存储所有block的数据
+        let mutedTracks = {}; // 存储静音的轨道
+        let selectedNote = 60; // 当前选中的音符 (C4)
+        let currentOctave = 4; // 当前八度
+        let isCaptionVisible = false; // 字幕音序器是否可见
+        let currentCaption = ""; // 当前显示的字幕
+        let isPageVisible = true; // 页面是否可见（用于性能优化）
+        let isHelpVisible = false; // 帮助窗口是否可见
+        
+        // 音高轨道配置
+        const pitchTracks = [
+            { id: 'triangle', name: 'TRIANGLE', color: 'triangle', defaultNote: 60, noteRange: [36, 84], type: 'triangle' },
+            { id: 'square_a', name: 'SQUARE A', color: 'square_a', defaultNote: 64, noteRange: [36, 84], type: 'square' },
+            { id: 'square_b', name: 'SQUARE B', color: 'square_b', defaultNote: 67, noteRange: [36, 84], type: 'square' },
+            { id: 'sawtooth', name: 'SAWTOOTH', color: 'sawtooth', defaultNote: 60, noteRange: [36, 84], type: 'sawtooth' }
+        ];
+        
+        // 鼓轨道配置
+        const drumTypes = [
+            { id: 'kick', name: 'KICK', color: 'kick' },
+            { id: 'snare', name: 'SNARE', color: 'snare' },
+            { id: 'hihat', name: 'HIHAT', color: 'hihat' },
+            { id: 'openhat', name: 'OPENHAT', color: 'openhat' },
+            { id: 'clap', name: 'CLAP', color: 'clap' }
+        ];
+        
+        // 所有轨道合并（不包括字幕轨道）
+        const allTracks = [...drumTypes, ...pitchTracks];
+        
+        // 默认高级设置参数 - 将所有音符轨道的颤音参数设置为0
+        const defaultTrackSettings = {
+            kick: { attack: 0.01, decay: 0.3, tone: 150, volume: 1.0 },
+            snare: { noise: 0.7, tone: 200, decay: 0.2, volume: 1.0 },
+            hihat: { decay: 0.1, tone: 7000, volume: 1.0 },
+            openhat: { decay: 0.5, tone: 5000, volume: 1.0 },
+            clap: { delay: 0.03, count: 3, decay: 0.1, volume: 1.0 },
+            triangle: { attack: 0.01, decay: 0.2, volume: 0.5, vibratoSpeed: 0, vibratoDepth: 0, vibratoAttack: 0, bitcrush: 0.0 },
+            square_a: { attack: 0.01, decay: 0.2, volume: 0.5, duty: 0.5, vibratoSpeed: 0, vibratoDepth: 0, vibratoAttack: 0 },
+            square_b: { attack: 0.01, decay: 0.2, volume: 0.5, duty: 0.5, vibratoSpeed: 0, vibratoDepth: 0, vibratoAttack: 0 },
+            sawtooth: { attack: 0.01, decay: 0.2, volume: 0.5, vibratoSpeed: 0, vibratoDepth: 0, vibratoAttack: 0 }
+        };
+        
+        // 当前高级设置参数
+        let trackSettings = JSON.parse(JSON.stringify(defaultTrackSettings));
+        
+        // 主题色对应的👾表情符号
+        const themeEmojis = ['👾', '👾', '👾', '👾', '👾', '👾', '👾', '👾'];
+        
+        // 波形可视化主题色
+        const waveformColors = ['#a8e0f0', '#f8d038', '#3a9e3a', '#a82a2a', '#e080c0', '#8a6df0', '#ffaa55', '#55aaff'];
+        
+        // DOM元素
+        const playBtn = document.getElementById('playBtn');
+        const loopBtn = document.getElementById('loopBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const newBtn = document.getElementById('newBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const advanceBtn = document.getElementById('advanceBtn');
+        const captionBtn = document.getElementById('captionBtn');
+        const helpBtn = document.getElementById('helpBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const bpmSlider = document.getElementById('bpmSlider');
+        const bpmValue = document.querySelector('.bpm-value');
+        const timeSignatureBtns = document.querySelectorAll('.time-signature-buttons .btn');
+        const sequencerGrid = document.getElementById('sequencerGrid');
+        const beatIndicator = document.getElementById('beatIndicator');
+        const waveform = document.getElementById('waveform');
+        const funVisualizer = document.getElementById('funVisualizer');
+        const captionDisplay = document.getElementById('captionDisplay');
+        const captionSequencer = document.getElementById('captionSequencer');
+        const captionStepCells = document.getElementById('captionStepCells');
+        const advanceSettings = document.getElementById('advanceSettings');
+        const settingsContent = document.getElementById('settingsContent');
+        const blocksList = document.getElementById('blocksList');
+        const addBlockBtn = document.getElementById('addBlockBtn');
+        const removeBlockBtn = document.getElementById('removeBlockBtn');
+        const duplicateBlockBtn = document.getElementById('duplicateBlockBtn');
+        const renameBlockBtn = document.getElementById('renameBlockBtn');
+        const moveLeftBtn = document.getElementById('moveLeftBtn');
+        const moveRightBtn = document.getElementById('moveRightBtn');
+        const pianoKeyboard = document.getElementById('pianoKeyboard');
+        const octaveDownBtn = document.getElementById('octaveDownBtn');
+        const octaveUpBtn = document.getElementById('octaveUpBtn');
+        const currentOctaveDisplay = document.getElementById('currentOctave');
+        const exportBtn = document.getElementById('exportBtn');
+        const importFile = document.getElementById('importFile');
+        const helpWindow = document.getElementById('helpWindow');
+        const helpClose = document.getElementById('helpClose');
+        const overlay = document.getElementById('overlay');
+        
+        // 初始化应用程序
+        function init() {
+            // 初始化blocks
+            initBlocks();
+            
+            // 初始化波形可视化
+            initWaveform();
+            
+            // 初始化高级设置
+            renderAdvancedSettings();
+            
+            // 初始化钢琴键盘
+            renderPianoKeyboard();
+            
+            // 初始化字幕音序器
+            initCaptionSequencer();
+            
+            // 设置事件监听器
+            setupEventListeners();
+            
+            // 添加默认pattern用于演示
+            addDefaultPattern();
+            
+            // 监听页面可见性变化（用于性能优化）
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            
+            // 防止程序自动滚动
+            window.addEventListener('scroll', function(e) {
+                // 如果滚动不是用户触发的，阻止它
+                if (!e.isTrusted) {
+                    window.scrollTo(0, 0);
+                }
+            });
+        }
+        
+        // 处理页面可见性变化
+        function handleVisibilityChange() {
+            isPageVisible = !document.hidden;
+        }
+        
+        // 初始化blocks数据
+        function initBlocks() {
+            blocks = [];
+            // 创建默认block
+            addNewBlock();
+        }
+        
+        // 添加新的block
+        function addNewBlock() {
+            const blockId = blocks.length;
+            const blockData = {
+                id: blockId,
+                name: `Pattern ${blockId + 1}`,
+                data: {},
+                caption: new Array(stepCount).fill("") // 字幕数据
+            };
+            
+            // 为每个轨道初始化序列数据
+            allTracks.forEach(track => {
+                if (pitchTracks.includes(track)) {
+                    // 音高轨道：存储激活状态和音符值
+                    blockData.data[track.id] = {
+                        active: new Array(stepCount).fill(false),
+                        notes: new Array(stepCount).fill(track.defaultNote)
+                    };
+                } else {
+                    // 鼓轨道：只存储激活状态
+                    blockData.data[track.id] = new Array(stepCount).fill(false);
+                }
+            });
+            
+            blocks.push(blockData);
+            renderBlocksList();
+            setCurrentBlock(blockId);
+        }
+        
+        // 复制当前block
+        function duplicateCurrentBlock() {
+            const currentBlockData = blocks[currentBlock];
+            const newBlockId = blocks.length;
+            
+            // 深拷贝当前block数据
+            const newBlockData = {
+                id: newBlockId,
+                name: `${currentBlockData.name} Copy`,
+                data: JSON.parse(JSON.stringify(currentBlockData.data)),
+                caption: [...currentBlockData.caption] // 复制字幕数据
+            };
+            
+            blocks.push(newBlockData);
+            renderBlocksList();
+            setCurrentBlock(newBlockId);
+        }
+        
+        // 重命名当前block
+        function renameCurrentBlock() {
+            const currentBlockData = blocks[currentBlock];
+            const newName = prompt('Enter new pattern name:', currentBlockData.name);
+            
+            if (newName && newName.trim() !== '') {
+                currentBlockData.name = newName.trim();
+                renderBlocksList();
+            }
+        }
+        
+        // 将block向左移动
+        function moveBlockLeft() {
+            if (currentBlock <= 0) return;
+            
+            // 交换block位置
+            [blocks[currentBlock], blocks[currentBlock - 1]] = [blocks[currentBlock - 1], blocks[currentBlock]];
+            
+            // 更新ID
+            blocks.forEach((block, index) => {
+                block.id = index;
+            });
+            
+            currentBlock--;
+            renderBlocksList();
+        }
+        
+        // 将block向右移动
+        function moveBlockRight() {
+            if (currentBlock >= blocks.length - 1) return;
+            
+            // 交换block位置
+            [blocks[currentBlock], blocks[currentBlock + 1]] = [blocks[currentBlock + 1], blocks[currentBlock]];
+            
+            // 更新ID
+            blocks.forEach((block, index) => {
+                block.id = index;
+            });
+            
+            currentBlock++;
+            renderBlocksList();
+        }
+        
+        // 删除当前block
+        function removeCurrentBlock() {
+            if (blocks.length <= 1) {
+                alert('Cannot delete the last pattern!');
+                return;
+            }
+            
+            blocks.splice(currentBlock, 1);
+            
+            // 更新所有block的ID
+            blocks.forEach((block, index) => {
+                block.id = index;
+            });
+            
+            // 如果删除的是当前block，切换到前一个block
+            if (currentBlock >= blocks.length) {
+                currentBlock = blocks.length - 1;
+            }
+            
+            renderBlocksList();
+            setCurrentBlock(currentBlock);
+        }
+        
+        // 设置当前block
+        function setCurrentBlock(blockId) {
+            currentBlock = blockId;
+            renderBlocksList();
+            renderSequencerGrid();
+            renderCaptionSequencer();
+        }
+        
+        // 渲染block列表
+        function renderBlocksList() {
+            blocksList.innerHTML = '';
+            
+            blocks.forEach(block => {
+                const blockItem = document.createElement('div');
+                blockItem.className = `block-item ${block.id === currentBlock ? 'active' : ''}`;
+                blockItem.textContent = block.name;
+                blockItem.addEventListener('click', () => {
+                    setCurrentBlock(block.id);
+                });
+                blocksList.appendChild(blockItem);
+            });
+            
+            // 滚动到当前block
+            const activeBlock = blocksList.querySelector('.active');
+            if (activeBlock) {
+                activeBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+        
+        // 根据拍号更新步数
+        function updateStepCount() {
+            switch(timeSignature) {
+                case 6: // 6/8拍
+                    stepCount = 12;
+                    break;
+                default: // 4/4拍
+                    stepCount = 16;
+            }
+            
+            // 更新所有block中数据的长度
+            blocks.forEach(block => {
+                allTracks.forEach(track => {
+                    if (pitchTracks.includes(track)) {
+                        // 音高轨道
+                        const oldActive = block.data[track.id]?.active || [];
+                        const oldNotes = block.data[track.id]?.notes || [];
+                        
+                        if (!block.data[track.id]) {
+                            block.data[track.id] = {
+                                active: new Array(stepCount).fill(false),
+                                notes: new Array(stepCount).fill(track.defaultNote)
+                            };
+                        } else {
+                            block.data[track.id].active = resizeArray(oldActive, stepCount, false);
+                            block.data[track.id].notes = resizeArray(oldNotes, stepCount, track.defaultNote);
+                        }
+                    } else {
+                        // 鼓轨道
+                        const oldData = block.data[track.id] || [];
+                        block.data[track.id] = resizeArray(oldData, stepCount, false);
+                    }
+                });
+                
+                // 更新字幕数据长度
+                if (!block.caption) {
+                    block.caption = new Array(stepCount).fill("");
+                } else {
+                    block.caption = resizeArray(block.caption, stepCount, "");
+                }
+            });
+            
+            // 重新渲染音序器网格和字幕音序器
+            renderSequencerGrid();
+            initCaptionSequencer(); // 重新初始化字幕音序器以显示正确数量的格子
+        }
+        
+        // 调整数组大小
+        function resizeArray(arr, newSize, defaultValue) {
+            if (arr.length === newSize) return arr;
+            
+            const newArr = new Array(newSize).fill(defaultValue);
+            const minLength = Math.min(arr.length, newSize);
+            
+            for (let i = 0; i < minLength; i++) {
+                newArr[i] = arr[i];
+            }
+            
+            return newArr;
+        }
+        
+        // 渲染音序器网格
+        function renderSequencerGrid() {
+            sequencerGrid.innerHTML = '';
+            
+            allTracks.forEach((track, rowIndex) => {
+                const drumRow = document.createElement('div');
+                drumRow.className = 'drum-row';
+                
+                const drumLabel = document.createElement('div');
+                drumLabel.className = `drum-label ${mutedTracks[track.id] ? 'muted' : ''}`;
+                drumLabel.textContent = track.name;
+                drumLabel.addEventListener('click', () => {
+                    toggleMuteTrack(track.id);
+                });
+                drumRow.appendChild(drumLabel);
+                
+                const stepCells = document.createElement('div');
+                stepCells.className = 'step-cells';
+                
+                // 创建步进格子
+                for (let step = 0; step < stepCount; step++) {
+                    const stepCell = document.createElement('div');
+                    stepCell.className = 'step-cell';
+                    stepCell.dataset.track = track.id;
+                    stepCell.dataset.step = step;
+                    
+                    // 获取当前block的数据
+                    const blockData = blocks[currentBlock].data[track.id];
+                    
+                    // 设置初始激活状态
+                    if (pitchTracks.includes(track)) {
+                        // 音高轨道
+                        if (blockData && blockData.active[step]) {
+                            stepCell.classList.add('active');
+                            stepCell.classList.add(track.color);
+                            
+                            // 添加音符显示
+                            const noteValue = document.createElement('div');
+                            noteValue.className = 'note-value';
+                            noteValue.textContent = midiToNote(blockData.notes[step]);
+                            stepCell.appendChild(noteValue);
+                        }
+                    } else {
+                        // 鼓轨道
+                        if (blockData && blockData[step]) {
+                            stepCell.classList.add('active');
+                            stepCell.classList.add(track.color);
+                        }
+                    }
+                    
+                    // 点击事件处理
+                    if (pitchTracks.includes(track)) {
+                        // 音高轨道：左键点击切换激活状态，右键点击应用选中的音符
+                        stepCell.addEventListener('click', (e) => {
+                            // 检查是否是Shift+左键（用于吸取音高）
+                            if (e.shiftKey && e.button === 0) {
+                                e.preventDefault();
+                                const step = parseInt(stepCell.dataset.step);
+                                const trackId = stepCell.dataset.track;
+                                
+                                // 如果该格子有激活的音符，吸取它的音高
+                                if (blocks[currentBlock].data[trackId] && blocks[currentBlock].data[trackId].active[step]) {
+                                    const note = blocks[currentBlock].data[trackId].notes[step];
+                                    selectedNote = note;
+                                    
+                                    // 更新钢琴键盘显示
+                                    renderPianoKeyboard();
+                                    
+                                    // 播放预览声音
+                                    playSoundPreview(note, trackId);
+                                }
+                                return;
+                            }
+                            
+                            if (e.button === 0) { // 左键
+                                const step = parseInt(stepCell.dataset.step);
+                                const trackId = stepCell.dataset.track;
+                                
+                                blocks[currentBlock].data[trackId].active[step] = !blocks[currentBlock].data[trackId].active[step];
+                                
+                                // 如果激活了，播放预览声音
+                                if (blocks[currentBlock].data[trackId].active[step]) {
+                                    playSoundPreview(blocks[currentBlock].data[trackId].notes[step], trackId);
+                                }
+                                
+                                renderSequencerGrid();
+                            }
+                        });
+                        
+                        // 右键事件：应用选中的音符
+                        stepCell.addEventListener('contextmenu', (e) => {
+                            e.preventDefault();
+                            const step = parseInt(stepCell.dataset.step);
+                            const trackId = stepCell.dataset.track;
+                            
+                            // 应用选中的音符
+                            blocks[currentBlock].data[trackId].notes[step] = selectedNote;
+                            
+                            // 如果该步是激活状态，播放预览
+                            if (blocks[currentBlock].data[trackId].active[step]) {
+                                playSoundPreview(selectedNote, trackId);
+                            }
+                            
+                            renderSequencerGrid();
+                        });
+                    } else {
+                        // 鼓轨道：简单切换激活状态
+                        stepCell.addEventListener('click', (e) => {
+                            if (e.button === 0) { // 左键
+                                const step = parseInt(stepCell.dataset.step);
+                                const trackId = stepCell.dataset.track;
+                                
+                                blocks[currentBlock].data[trackId][step] = !blocks[currentBlock].data[trackId][step];
+                                stepCell.classList.toggle('active');
+                                stepCell.classList.toggle(track.color);
+                                
+                                // 如果激活了，播放预览声音
+                                if (blocks[currentBlock].data[trackId][step]) {
+                                    playSoundPreview(blocks[currentBlock].data[trackId][step], trackId);
+                                }
+                            }
+                        });
+                    }
+                    
+                    // 阻止默认右键菜单
+                    stepCell.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                    });
+                    
+                    stepCells.appendChild(stepCell);
+                }
+                
+                drumRow.appendChild(stepCells);
+                sequencerGrid.appendChild(drumRow);
+            });
+        }
+        
+        // 切换轨道静音状态
+        function toggleMuteTrack(trackId) {
+            mutedTracks[trackId] = !mutedTracks[trackId];
+            renderSequencerGrid();
+        }
+        
+        // 初始化字幕音序器
+        function initCaptionSequencer() {
+            captionStepCells.innerHTML = '';
+            
+            for (let step = 0; step < stepCount; step++) {
+                const stepCell = document.createElement('div');
+                stepCell.className = 'caption-step-cell';
+                stepCell.dataset.step = step;
+                
+                // 获取当前block的字幕数据
+                const caption = blocks[currentBlock].caption[step];
+                if (caption !== undefined && caption !== "") {
+                    stepCell.classList.add('active');
+                    
+                    // 添加字幕文本显示（显示第一个字符）
+                    const captionText = document.createElement('div');
+                    captionText.className = 'caption-text';
+                    
+                    // 显示第一个非空格字符，如果都是空格则显示一个空格
+                    const firstNonSpace = caption.match(/[^\s]/);
+                    if (firstNonSpace) {
+                        captionText.textContent = firstNonSpace[0];
+                    } else {
+                        captionText.textContent = " "; // 显示一个空格
+                        captionText.style.opacity = "0.5"; // 让空格看起来淡一些
+                    }
+                    
+                    stepCell.appendChild(captionText);
+                }
+                
+                // 左键点击：放置/消除字幕
+                stepCell.addEventListener('click', (e) => {
+                    if (e.button === 0) { // 左键
+                        const step = parseInt(stepCell.dataset.step);
+                        
+                        if (stepCell.classList.contains('active')) {
+                            // 如果已经有字幕，清除它
+                            stepCell.classList.remove('active');
+                            blocks[currentBlock].caption[step] = "";
+                            
+                            // 移除字幕文本
+                            const existingText = stepCell.querySelector('.caption-text');
+                            if (existingText) {
+                                stepCell.removeChild(existingText);
+                            }
+                        } else {
+                            // 如果没有字幕，添加默认字幕
+                            stepCell.classList.add('active');
+                            blocks[currentBlock].caption[step] = "Text";
+                            
+                            // 添加字幕文本显示
+                            const captionText = document.createElement('div');
+                            captionText.className = 'caption-text';
+                            captionText.textContent = "T"; // 只显示第一个字符
+                            stepCell.appendChild(captionText);
+                        }
+                    }
+                });
+                
+                // 右键点击：编辑字幕文本
+                stepCell.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    const step = parseInt(stepCell.dataset.step);
+                    
+                    // 如果有字幕或者要添加新字幕
+                    const currentText = blocks[currentBlock].caption[step] || "";
+                    const newText = prompt('Enter caption text (spaces allowed):', currentText);
+                    
+                    if (newText !== null) {
+                        if (newText.trim() === '' && newText.length === 0) {
+                            // 如果输入空文本，清除字幕
+                            stepCell.classList.remove('active');
+                            blocks[currentBlock].caption[step] = "";
+                            
+                            // 移除字幕文本
+                            const existingText = stepCell.querySelector('.caption-text');
+                            if (existingText) {
+                                stepCell.removeChild(existingText);
+                            }
+                        } else {
+                            // 更新字幕文本
+                            stepCell.classList.add('active');
+                            blocks[currentBlock].caption[step] = newText;
+                            
+                            // 更新或添加字幕文本显示
+                            let captionText = stepCell.querySelector('.caption-text');
+                            if (!captionText) {
+                                captionText = document.createElement('div');
+                                captionText.className = 'caption-text';
+                                stepCell.appendChild(captionText);
+                            }
+                            
+                            // 显示第一个非空格字符，如果都是空格则显示一个空格
+                            const firstNonSpace = newText.match(/[^\s]/);
+                            if (firstNonSpace) {
+                                captionText.textContent = firstNonSpace[0];
+                                captionText.style.opacity = "1";
+                            } else {
+                                captionText.textContent = " "; // 显示一个空格
+                                captionText.style.opacity = "0.5"; // 让空格看起来淡一些
+                            }
+                        }
+                    }
+                });
+                
+                // 鼠标悬停预览
+                stepCell.addEventListener('mouseenter', () => {
+                    const step = parseInt(stepCell.dataset.step);
+                    const caption = blocks[currentBlock].caption[step];
+                    
+                    if (caption !== undefined && caption !== "") {
+                        // 显示预览（使用不同的颜色）
+                        showCaption(caption, true);
+                    }
+                });
+                
+                // 鼠标离开隐藏预览
+                stepCell.addEventListener('mouseleave', () => {
+                    // 如果不是在播放状态下，清除预览
+                    if (!isPlaying) {
+                        hideCaptionDisplay();
+                    }
+                });
+                
+                // 阻止默认右键菜单
+                stepCell.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                });
+                
+                captionStepCells.appendChild(stepCell);
+            }
+        }
+        
+        // 渲染字幕音序器
+        function renderCaptionSequencer() {
+            // 清除当前步进的视觉反馈
+            const allSteps = document.querySelectorAll('.caption-step-cell');
+            allSteps.forEach(step => step.classList.remove('current'));
+            
+            // 获取当前block的字幕数据
+            const captionData = blocks[currentBlock].caption;
+            
+            // 更新字幕步进格子
+            for (let step = 0; step < stepCount; step++) {
+                const stepCell = document.querySelector(`.caption-step-cell[data-step="${step}"]`);
+                if (stepCell) {
+                    const caption = captionData[step];
+                    
+                    // 更新激活状态
+                    if (caption !== undefined && caption !== "") {
+                        stepCell.classList.add('active');
+                        
+                        // 更新或添加字幕文本显示
+                        let captionText = stepCell.querySelector('.caption-text');
+                        if (!captionText) {
+                            captionText = document.createElement('div');
+                            captionText.className = 'caption-text';
+                            stepCell.appendChild(captionText);
+                        }
+                        
+                        // 显示第一个非空格字符，如果都是空格则显示一个空格
+                        const firstNonSpace = caption.match(/[^\s]/);
+                        if (firstNonSpace) {
+                            captionText.textContent = firstNonSpace[0];
+                            captionText.style.opacity = "1";
+                        } else {
+                            captionText.textContent = " "; // 显示一个空格
+                            captionText.style.opacity = "0.5"; // 让空格看起来淡一些
+                        }
+                    } else {
+                        stepCell.classList.remove('active');
+                        
+                        // 移除字幕文本
+                        const existingText = stepCell.querySelector('.caption-text');
+                        if (existingText) {
+                            stepCell.removeChild(existingText);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 显示字幕（只在字幕音序器打开时可见）
+        function showCaption(text, isPreview = false) {
+            if (!isCaptionVisible && !isPreview) {
+                // 如果字幕音序器未打开，且不是预览，则不显示
+                return;
+            }
+            
+            if (text && text.trim() !== '') {
+                captionDisplay.textContent = text;
+                captionDisplay.className = `caption-display ${isPreview ? 'preview' : ''}`;
+                captionDisplay.classList.add('show');
+            }
+        }
+        
+        // 隐藏字幕
+        function hideCaptionDisplay() {
+            captionDisplay.classList.remove('show');
+        }
+        
+        // 清除字幕
+        function clearCaptionDisplay() {
+            captionDisplay.textContent = "";
+            captionDisplay.classList.remove('show');
+        }
+        
+        // 初始化波形可视化
+        function initWaveform() {
+            waveform.innerHTML = '';
+            const barCount = 32;
+            
+            for (let i = 0; i < barCount; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'waveform-bar';
+                bar.style.left = `${(i / barCount) * 100}%`;
+                bar.style.height = `${Math.random() * 30 + 10}px`;
+                waveform.appendChild(bar);
+            }
+        }
+        
+        // 更新波形可视化
+        function updateWaveform() {
+            const bars = document.querySelectorAll('.waveform-bar');
+            bars.forEach(bar => {
+                // 随机更新高度，模拟音频活动
+                const currentHeight = parseFloat(bar.style.height);
+                const newHeight = Math.max(10, currentHeight + (Math.random() * 20 - 10));
+                bar.style.height = `${newHeight}px`;
+                
+                // 随机改变颜色
+                if (Math.random() > 0.7) {
+                    bar.style.backgroundColor = waveformColors[Math.floor(Math.random() * waveformColors.length)];
+                }
+            });
+        }
+        
+        // 更新趣味可视化
+        function updateFunVisualizer(trackId, step) {
+            // 如果页面不可见，不生成emoji（性能优化）
+            if (!isPageVisible) return;
+            
+            // 随机选择一个👾表情
+            const emoji = themeEmojis[Math.floor(Math.random() * themeEmojis.length)];
+            
+            // 创建表情元素
+            const emojiElement = document.createElement('div');
+            emojiElement.className = 'emoji-char';
+            emojiElement.textContent = emoji;
+            emojiElement.style.fontSize = `${24 + Math.random() * 16}px`;
+            
+            // 使用随机单一颜色（从波形可视化主题色中选取）
+            const randomColor = waveformColors[Math.floor(Math.random() * waveformColors.length)];
+            emojiElement.style.color = randomColor;
+            
+            // 设置随机水平位置
+            const left = Math.random() * 90;
+            emojiElement.style.left = `${left}%`;
+            
+            // 添加到可视化区域
+            funVisualizer.appendChild(emojiElement);
+            
+            // 跳跃动画
+            let jumpHeight = 0;
+            const maxJump = 50;
+            const jumpSpeed = 0.1;
+            let direction = 1;
+            
+            function jump() {
+                jumpHeight += direction * jumpSpeed * maxJump;
+                
+                if (jumpHeight >= maxJump) {
+                    direction = -1;
+                }
+                
+                emojiElement.style.bottom = `${jumpHeight}px`;
+                
+                if (jumpHeight > 0) {
+                    requestAnimationFrame(jump);
+                } else {
+                    // 动画结束后移除元素
+                    setTimeout(() => {
+                        if (emojiElement.parentNode) {
+                            emojiElement.parentNode.removeChild(emojiElement);
+                        }
+                    }, 1000);
+                }
+            }
+            
+            // 开始跳跃动画
+            jump();
+        }
+        
+        // MIDI音符转换为音符名称
+        function midiToNote(midi) {
+            const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const octave = Math.floor(midi / 12) - 1;
+            const note = notes[midi % 12];
+            return note + octave;
+        }
+        
+        // 音符名称转换为MIDI音符
+        function noteToMidi(note) {
+            const noteMap = {
+                'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+                'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+                'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+            };
+            
+            const match = note.match(/^([A-Ga-g][#b]?)(-?\d+)$/);
+            if (!match) return null;
+            
+            const noteName = match[1].toUpperCase();
+            const octave = parseInt(match[2]);
+            
+            if (!noteMap.hasOwnProperty(noteName)) return null;
+            
+            return (octave + 1) * 12 + noteMap[noteName];
+        }
+        
+        // 播放声音预览（用于音符选择和音高调整）- 使用方波
+        function playSoundPreview(note, trackId = null) {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            const time = audioContext.currentTime;
+            
+            // 如果是鼓轨道，播放鼓声音
+            if (trackId && drumTypes.some(track => track.id === trackId)) {
+                playDrumSound(trackId, time, true);
+                return;
+            }
+            
+            // 音高预览使用方波
+            const frequency = 440 * Math.pow(2, (note - 69) / 12);
+            playSquareSoundPreview(frequency, time);
+        }
+        
+        // 播放方波声音预览
+        function playSquareSoundPreview(frequency, time) {
+            // 创建振荡器
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // 使用自定义方波实现（使用buffer）
+            createCustomSquareWave(oscillator, trackSettings.square_a.duty || 0.5);
+            
+            oscillator.frequency.setValueAtTime(frequency, time);
+            
+            // 设置音量包络
+            gainNode.gain.setValueAtTime(0, time);
+            gainNode.gain.linearRampToValueAtTime(0.3, time + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.3);
+            
+            // 开始和停止振荡器
+            oscillator.start(time);
+            oscillator.stop(time + 0.5);
+        }
+        
+        // 创建自定义方波（使用buffer实现）
+        function createCustomSquareWave(oscillator, duty) {
+            const real = new Float32Array(256);
+            const imag = new Float32Array(256);
+            
+            // 创建方波
+            for (let n = 1; n < 256; n++) {
+                // 方波的傅里叶级数表示
+                const harmonic = n;
+                const amplitude = (4 / (Math.PI * harmonic)) * Math.sin(Math.PI * harmonic * duty);
+                real[n] = amplitude;
+                imag[n] = 0;
+            }
+            
+            const customWave = audioContext.createPeriodicWave(real, imag);
+            oscillator.setPeriodicWave(customWave);
+        }
+        
+        // 创建三角波buffer（使用buffer实现三角波）
+        function createTriangleWaveBuffer(frequency, bitcrush = 0) {
+            // 创建buffer，长度为1个周期
+            const sampleRate = audioContext.sampleRate;
+            const cycleLength = Math.floor(sampleRate / frequency);
+            const buffer = audioContext.createBuffer(1, cycleLength, sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            // 生成三角波
+            for (let i = 0; i < cycleLength; i++) {
+                // 计算三角波位置 (0到1)
+                const t = i / cycleLength;
+                let value;
+                
+                // 三角波公式：上升、下降、再上升
+                if (t < 0.25) {
+                    // 0到1
+                    value = t * 4;
+                } else if (t < 0.75) {
+                    // 1到-1
+                    value = 1 - (t - 0.25) * 4;
+                } else {
+                    // -1到0
+                    value = -1 + (t - 0.75) * 4;
+                }
+                
+                // 应用bitcrush效果（模拟8位游戏机音质）
+                if (bitcrush > 0) {
+                    // 将bitcrush值映射到量化级别（0.0=无效果，1.0=最大效果）
+                    const levels = Math.max(2, Math.floor(256 * (1 - bitcrush)));
+                    const step = 2 / levels;
+                    
+                    // 量化波形值
+                    value = Math.round(value / step) * step;
+                    
+                    // 确保值在范围内
+                    value = Math.max(-1, Math.min(1, value));
+                }
+                
+                data[i] = value;
+            }
+            
+            return buffer;
+        }
+        
+        // 播放序列时的声音
+        function playSound(trackId, step = null) {
+            // 如果轨道被静音，不播放
+            if (mutedTracks[trackId]) return;
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            const time = audioContext.currentTime;
+            
+            // 检查是否是音高轨道
+            const isPitchTrack = pitchTracks.some(track => track.id === trackId);
+            
+            if (isPitchTrack && step !== null) {
+                // 音高轨道
+                const noteData = blocks[currentBlock].data[trackId];
+                if (!noteData.active[step]) return;
+                
+                const midiNote = noteData.notes[step];
+                const frequency = 440 * Math.pow(2, (midiNote - 69) / 12);
+                
+                playSynthSound(trackId, frequency, time);
+                
+                // 更新趣味可视化
+                updateFunVisualizer(trackId, step);
+            } else {
+                // 鼓轨道
+                playDrumSound(trackId, time, false);
+                
+                // 更新趣味可视化
+                updateFunVisualizer(trackId, currentPatternStep);
+            }
+            
+            // 更新波形可视化
+            updateWaveform();
+        }
+        
+        // 播放合成器声音（带颤音和bitcrush效果）
+        function playSynthSound(trackId, baseFrequency, time) {
+            const settings = trackSettings[trackId];
+            
+            // 特殊处理三角波：使用buffer实现
+            if (trackId === 'triangle') {
+                playTriangleWaveSound(baseFrequency, time, settings);
+                return;
+            }
+            
+            // 其他轨道使用原有的实现
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // 设置振荡器类型
+            if (trackId.startsWith('square')) {
+                // 方波使用自定义波形
+                createCustomSquareWave(oscillator, settings.duty || 0.5);
+            } else {
+                oscillator.type = trackId === 'sawtooth' ? 'sawtooth' : 'triangle';
+            }
+            
+            // 应用颤音效果（如果设置不为0）
+            if (settings.vibratoSpeed > 0 && settings.vibratoDepth > 0) {
+                // 创建颤音振荡器（低频振荡器）
+                const vibratoOscillator = audioContext.createOscillator();
+                const vibratoGain = audioContext.createGain();
+                
+                // 设置颤音参数
+                vibratoOscillator.frequency.setValueAtTime(settings.vibratoSpeed, time);
+                
+                // 设置颤音深度，并应用attack时间
+                if (settings.vibratoAttack > 0) {
+                    // 颤音深度从0开始，在attack时间内逐渐增加到设定值
+                    vibratoGain.gain.setValueAtTime(0, time);
+                    vibratoGain.gain.linearRampToValueAtTime(settings.vibratoDepth * 5, time + settings.vibratoAttack);
+                } else {
+                    vibratoGain.gain.setValueAtTime(settings.vibratoDepth * 5, time);
+                }
+                
+                // 连接颤音到主振荡器频率
+                vibratoOscillator.connect(vibratoGain);
+                vibratoGain.connect(oscillator.frequency);
+                
+                // 设置基础频率
+                oscillator.frequency.setValueAtTime(baseFrequency, time);
+                
+                // 开始颤音振荡器
+                vibratoOscillator.start(time);
+                vibratoOscillator.stop(time + settings.attack + settings.decay + 0.1);
+            } else {
+                // 没有颤音，直接设置频率
+                oscillator.frequency.setValueAtTime(baseFrequency, time);
+            }
+            
+            // 设置音量包络
+            gainNode.gain.setValueAtTime(0, time);
+            gainNode.gain.linearRampToValueAtTime(settings.volume, time + settings.attack);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, time + settings.attack + settings.decay);
+            
+            // 开始和停止振荡器
+            oscillator.start(time);
+            oscillator.stop(time + settings.attack + settings.decay + 0.1);
+        }
+        
+        // 播放三角波声音（使用buffer实现，支持颤音和bitcrush）
+        function playTriangleWaveSound(baseFrequency, time, settings) {
+            // 创建buffer source
+            const bufferSource = audioContext.createBufferSource();
+            const gainNode = audioContext.createGain();
+            
+            // 创建三角波buffer（应用bitcrush效果）
+            const buffer = createTriangleWaveBuffer(baseFrequency, settings.bitcrush);
+            bufferSource.buffer = buffer;
+            bufferSource.loop = true;
+            
+            bufferSource.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // 应用颤音效果（如果设置不为0）
+            if (settings.vibratoSpeed > 0 && settings.vibratoDepth > 0) {
+                // 创建颤音振荡器（低频振荡器）
+                const vibratoOscillator = audioContext.createOscillator();
+                const vibratoGain = audioContext.createGain();
+                
+                // 设置颤音参数
+                vibratoOscillator.frequency.setValueAtTime(settings.vibratoSpeed, time);
+                
+                // 设置颤音深度，并应用attack时间
+                if (settings.vibratoAttack > 0) {
+                    // 颤音深度从0开始，在attack时间内逐渐增加到设定值
+                    vibratoGain.gain.setValueAtTime(0, time);
+                    vibratoGain.gain.linearRampToValueAtTime(settings.vibratoDepth * baseFrequency / 2, time + settings.vibratoAttack);
+                } else {
+                    vibratoGain.gain.setValueAtTime(settings.vibratoDepth * baseFrequency / 2, time);
+                }
+                
+                // 创建constant source用于基础频率
+                const constantSource = audioContext.createConstantSource();
+                constantSource.offset.setValueAtTime(baseFrequency, time);
+                
+                // 连接constant source和颤音到playback rate
+                constantSource.connect(bufferSource.detune);
+                vibratoOscillator.connect(vibratoGain).connect(bufferSource.detune);
+                
+                // 开始constant source和颤音振荡器
+                constantSource.start(time);
+                vibratoOscillator.start(time);
+                
+                // 停止constant source和颤音振荡器
+                constantSource.stop(time + settings.attack + settings.decay + 0.1);
+                vibratoOscillator.stop(time + settings.attack + settings.decay + 0.1);
+            } else {
+                // 没有颤音，直接设置playback rate
+                bufferSource.playbackRate.setValueAtTime(1, time);
+            }
+            
+            // 设置音量包络
+            gainNode.gain.setValueAtTime(0, time);
+            gainNode.gain.linearRampToValueAtTime(settings.volume, time + settings.attack);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, time + settings.attack + settings.decay);
+            
+            // 开始和停止buffer source
+            bufferSource.start(time);
+            bufferSource.stop(time + settings.attack + settings.decay + 0.1);
+        }
+        
+        // 播放鼓声音
+        function playDrumSound(drumType, time, isPreview = false) {
+            const settings = trackSettings[drumType];
+            
+            // 应用音量设置（如果是预览，使用较小音量）
+            const volume = isPreview ? settings.volume * 0.5 : settings.volume;
+            
+            switch(drumType) {
+                case 'kick':
+                    // 低音鼓：正弦波振荡器 + 频率衰减
+                    const kickOsc = audioContext.createOscillator();
+                    const kickGain = audioContext.createGain();
+                    
+                    kickOsc.connect(kickGain);
+                    kickGain.connect(audioContext.destination);
+                    
+                    kickOsc.frequency.setValueAtTime(settings.tone, time);
+                    kickOsc.frequency.exponentialRampToValueAtTime(0.001, time + settings.decay);
+                    
+                    kickGain.gain.setValueAtTime(volume, time);
+                    kickGain.gain.exponentialRampToValueAtTime(0.001, time + settings.decay);
+                    
+                    kickOsc.start(time);
+                    kickOsc.stop(time + settings.decay + 0.1);
+                    break;
+                    
+                case 'snare':
+                    // 军鼓：噪声 + 带通滤波
+                    const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.5, audioContext.sampleRate);
+                    const noiseOutput = noiseBuffer.getChannelData(0);
+                    
+                    for (let i = 0; i < noiseOutput.length; i++) {
+                        noiseOutput[i] = Math.random() * 2 - 1;
+                    }
+                    
+                    const noiseSource = audioContext.createBufferSource();
+                    noiseSource.buffer = noiseBuffer;
+                    
+                    const noiseFilter = audioContext.createBiquadFilter();
+                    noiseFilter.type = 'bandpass';
+                    noiseFilter.frequency.value = settings.tone;
+                    
+                    const noiseGain = audioContext.createGain();
+                    noiseGain.gain.setValueAtTime(settings.noise * volume, time);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.01, time + settings.decay);
+                    
+                    noiseSource.connect(noiseFilter);
+                    noiseFilter.connect(noiseGain);
+                    noiseGain.connect(audioContext.destination);
+                    
+                    noiseSource.start(time);
+                    
+                    // 添加一个短暂的音调
+                    const snareOsc = audioContext.createOscillator();
+                    const snareGain = audioContext.createGain();
+                    
+                    snareOsc.frequency.setValueAtTime(settings.tone, time);
+                    snareGain.gain.setValueAtTime(0.5 * volume, time);
+                    snareGain.gain.exponentialRampToValueAtTime(0.01, time + settings.decay / 2);
+                    
+                    snareOsc.connect(snareGain);
+                    snareGain.connect(audioContext.destination);
+                    
+                    snareOsc.start(time);
+                    snareOsc.stop(time + settings.decay / 2);
+                    break;
+                    
+                case 'hihat':
+                    // 踩镲：高频噪声 + 快速衰减
+                    const hihatBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
+                    const hihatOutput = hihatBuffer.getChannelData(0);
+                    
+                    for (let i = 0; i < hihatOutput.length; i++) {
+                        hihatOutput[i] = Math.random() * 2 - 1;
+                    }
+                    
+                    const hihatSource = audioContext.createBufferSource();
+                    hihatSource.buffer = hihatBuffer;
+                    
+                    const hihatFilter = audioContext.createBiquadFilter();
+                    hihatFilter.type = 'highpass';
+                    hihatFilter.frequency.value = settings.tone;
+                    
+                    const hihatGain = audioContext.createGain();
+                    hihatGain.gain.setValueAtTime(0.7 * volume, time);
+                    hihatGain.gain.exponentialRampToValueAtTime(0.01, time + settings.decay);
+                    
+                    hihatSource.connect(hihatFilter);
+                    hihatFilter.connect(hihatGain);
+                    hihatGain.connect(audioContext.destination);
+                    
+                    hihatSource.start(time);
+                    break;
+                    
+                case 'openhat':
+                    // 开镲：噪声 + 较长衰减
+                    const openhatBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.3, audioContext.sampleRate);
+                    const openhatOutput = openhatBuffer.getChannelData(0);
+                    
+                    for (let i = 0; i < openhatOutput.length; i++) {
+                        openhatOutput[i] = Math.random() * 2 - 1;
+                    }
+                    
+                    const openhatSource = audioContext.createBufferSource();
+                    openhatSource.buffer = openhatBuffer;
+                    
+                    const openhatFilter = audioContext.createBiquadFilter();
+                    openhatFilter.type = 'highpass';
+                    openhatFilter.frequency.value = settings.tone;
+                    
+                    const openhatGain = audioContext.createGain();
+                    openhatGain.gain.setValueAtTime(0.5 * volume, time);
+                    openhatGain.gain.exponentialRampToValueAtTime(0.01, time + settings.decay);
+                    
+                    openhatSource.connect(openhatFilter);
+                    openhatFilter.connect(openhatGain);
+                    openhatGain.connect(audioContext.destination);
+                    
+                    openhatSource.start(time);
+                    break;
+                    
+                case 'clap':
+                    // 拍手：多个短噪声脉冲
+                    for (let i = 0; i < settings.count; i++) {
+                        const clapBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.05, audioContext.sampleRate);
+                        const clapOutput = clapBuffer.getChannelData(0);
+                        
+                        for (let j = 0; j < clapOutput.length; j++) {
+                            clapOutput[j] = Math.random() * 2 - 1;
+                        }
+                        
+                        const clapSource = audioContext.createBufferSource();
+                        clapSource.buffer = clapBuffer;
+                        
+                        const clapGain = audioContext.createGain();
+                        clapGain.gain.setValueAtTime((0.8 - (i * 0.2)) * volume, time + (i * settings.delay));
+                        clapGain.gain.exponentialRampToValueAtTime(0.01, time + (i * settings.delay) + settings.decay);
+                        
+                        clapSource.connect(clapGain);
+                        clapGain.connect(audioContext.destination);
+                        
+                        clapSource.start(time + (i * settings.delay));
+                    }
+                    break;
+            }
+        }
+        
+        // 渲染高级设置界面（包含颤音和bitcrush参数）
+        function renderAdvancedSettings() {
+            settingsContent.innerHTML = '';
+            
+            allTracks.forEach(track => {
+                const settingGroup = document.createElement('div');
+                settingGroup.className = 'setting-group';
+                
+                const title = document.createElement('h3');
+                title.textContent = track.name;
+                settingGroup.appendChild(title);
+                
+                const settings = trackSettings[track.id];
+                for (const [key, value] of Object.entries(settings)) {
+                    const settingRow = document.createElement('div');
+                    settingRow.className = 'setting-row';
+                    
+                    const label = document.createElement('div');
+                    label.className = 'setting-label';
+                    
+                    // 为参数使用更友好的标签
+                    if (key === 'vibratoSpeed') {
+                        label.textContent = 'VIBRATO SPD';
+                    } else if (key === 'vibratoDepth') {
+                        label.textContent = 'VIBRATO DPTH';
+                    } else if (key === 'vibratoAttack') {
+                        label.textContent = 'VIBRATO ATK';
+                    } else if (key === 'bitcrush') {
+                        label.textContent = 'BITCRUSH';
+                    } else {
+                        label.textContent = key.toUpperCase();
+                    }
+                    
+                    const valueDisplay = document.createElement('div');
+                    valueDisplay.className = 'setting-value';
+                    valueDisplay.id = `setting-${track.id}-${key}`;
+                    
+                    // 根据参数类型格式化显示值
+                    if (key === 'tone' || key === 'count') {
+                        valueDisplay.textContent = Math.round(value);
+                    } else if (key === 'volume' || key === 'duty' || key === 'noise' || key === 'vibratoSpeed' || key === 'vibratoDepth' || key === 'vibratoAttack' || key === 'bitcrush') {
+                        valueDisplay.textContent = value.toFixed(2);
+                    } else {
+                        valueDisplay.textContent = value.toFixed(2);
+                    }
+                    
+                    const slider = document.createElement('input');
+                    slider.type = 'range';
+                    
+                    // 根据参数设置滑块属性
+                    if (key === 'tone') {
+                        slider.className = 'setting-slider tone';
+                        slider.min = '50';
+                        slider.max = '10000';
+                        slider.step = '10';
+                        slider.value = value;
+                    } else if (key === 'count') {
+                        slider.className = 'setting-slider count';
+                        slider.min = '1';
+                        slider.max = '5';
+                        slider.step = '1';
+                        slider.value = value;
+                    } else if (key === 'delay') {
+                        slider.className = 'setting-slider delay';
+                        slider.min = '0.01';
+                        slider.max = '0.1';
+                        slider.step = '0.01';
+                        slider.value = value;
+                    } else if (key === 'duty') {
+                        slider.className = 'setting-slider duty';
+                        slider.min = '0.1';
+                        slider.max = '0.9';
+                        slider.step = '0.05';
+                        slider.value = value;
+                    } else if (key === 'volume') {
+                        slider.className = 'setting-slider volume';
+                        slider.min = '0';
+                        slider.max = '2';
+                        slider.step = '0.05';
+                        slider.value = value;
+                    } else if (key === 'noise') {
+                        slider.className = 'setting-slider noise';
+                        slider.min = '0';
+                        slider.max = '1';
+                        slider.step = '0.05';
+                        slider.value = value;
+                    } else if (key === 'vibratoSpeed') {
+                        slider.className = 'setting-slider vibrato-speed';
+                        slider.min = '0';
+                        slider.max = '20';
+                        slider.step = '0.1';
+                        slider.value = value;
+                    } else if (key === 'vibratoDepth') {
+                        slider.className = 'setting-slider vibrato-depth';
+                        slider.min = '0';
+                        slider.max = '2';
+                        slider.step = '0.01';
+                        slider.value = value;
+                    } else if (key === 'vibratoAttack') {
+                        slider.className = 'setting-slider vibrato-attack';
+                        slider.min = '0';
+                        slider.max = '1';
+                        slider.step = '0.01';
+                        slider.value = value;
+                    } else if (key === 'bitcrush') {
+                        slider.className = 'setting-slider bitcrush';
+                        slider.min = '0';
+                        slider.max = '1';
+                        slider.step = '0.01';
+                        slider.value = value;
+                    } else {
+                        slider.className = `setting-slider ${key}`;
+                        slider.min = '0';
+                        slider.max = '1';
+                        slider.step = '0.01';
+                        slider.value = value;
+                    }
+                    
+                    slider.addEventListener('input', function() {
+                        const newValue = parseFloat(this.value);
+                        settings[key] = newValue;
+                        
+                        // 更新值显示
+                        if (key === 'tone' || key === 'count') {
+                            valueDisplay.textContent = Math.round(newValue);
+                        } else {
+                            valueDisplay.textContent = newValue.toFixed(2);
+                        }
+                    });
+                    
+                    settingRow.appendChild(label);
+                    settingRow.appendChild(slider);
+                    settingRow.appendChild(valueDisplay);
+                    settingGroup.appendChild(settingRow);
+                }
+                
+                settingsContent.appendChild(settingGroup);
+            });
+        }
+        
+        // 渲染钢琴键盘（所有琴键改为相同大小的矩形）
+        function renderPianoKeyboard() {
+            pianoKeyboard.innerHTML = '';
+            
+            // 计算当前八度的音符范围
+            const startNote = 12 * (currentOctave + 1); // C0 = 12, 所以C4 = 60
+            const endNote = startNote + 11; // 显示一个八度加一个音符（12个键）
+            
+            // 创建琴键
+            for (let note = startNote; note <= endNote; note++) {
+                const noteName = midiToNote(note);
+                const isBlackKey = noteName.includes('#');
+                
+                const key = document.createElement('div');
+                key.className = `piano-key ${isBlackKey ? 'black-key' : 'white-key'} ${selectedNote === note ? 'active' : ''}`;
+                key.dataset.note = note;
+                key.dataset.name = noteName;
+                
+                const label = document.createElement('div');
+                label.className = 'key-label';
+                label.textContent = noteName;
+                key.appendChild(label);
+                
+                key.addEventListener('click', () => {
+                    // 更新选中的音符
+                    selectedNote = note;
+                    
+                    // 更新键盘显示
+                    document.querySelectorAll('.piano-key').forEach(k => {
+                        k.classList.remove('active');
+                    });
+                    key.classList.add('active');
+                    
+                    // 播放预览声音（使用方波）
+                    playSoundPreview(note);
+                });
+                
+                pianoKeyboard.appendChild(key);
+            }
+        }
+        
+        // 降低八度
+        function decreaseOctave() {
+            if (currentOctave > 1) {
+                currentOctave--;
+                currentOctaveDisplay.textContent = currentOctave;
+                renderPianoKeyboard();
+                
+                // 调整选中的音符到新八度
+                const noteName = midiToNote(selectedNote);
+                const newNoteName = noteName.replace(/\d+$/, currentOctave);
+                const newMidiNote = noteToMidi(newNoteName);
+                if (newMidiNote !== null) {
+                    selectedNote = newMidiNote;
+                    renderPianoKeyboard();
+                }
+            }
+        }
+        
+        // 提高八度
+        function increaseOctave() {
+            if (currentOctave < 6) {
+                currentOctave++;
+                currentOctaveDisplay.textContent = currentOctave;
+                renderPianoKeyboard();
+                
+                // 调整选中的音符到新八度
+                const noteName = midiToNote(selectedNote);
+                const newNoteName = noteName.replace(/\d+$/, currentOctave);
+                const newMidiNote = noteToMidi(newNoteName);
+                if (newMidiNote !== null) {
+                    selectedNote = newMidiNote;
+                    renderPianoKeyboard();
+                }
+            }
+        }
+        
+        // 降低半音
+        function decreaseSemitone() {
+            if (selectedNote > 0) {
+                selectedNote--;
+                renderPianoKeyboard();
+                playSoundPreview(selectedNote);
+            }
+        }
+        
+        // 升高半音
+        function increaseSemitone() {
+            if (selectedNote < 127) {
+                selectedNote++;
+                renderPianoKeyboard();
+                playSoundPreview(selectedNote);
+            }
+        }
+        
+        // 播放序列
+        function playSequence() {
+            if (!isPlaying) return;
+            
+            // 清除当前步进的视觉反馈
+            const allSteps = document.querySelectorAll('.step-cell');
+            allSteps.forEach(step => step.classList.remove('current'));
+            
+            const captionSteps = document.querySelectorAll('.caption-step-cell');
+            captionSteps.forEach(step => step.classList.remove('current'));
+            
+            // 更新当前步进指示器
+            const currentSteps = document.querySelectorAll(`.step-cell[data-step="${currentPatternStep}"]`);
+            currentSteps.forEach(step => step.classList.add('current'));
+            
+            // 更新字幕音序器当前步进指示器
+            const currentCaptionStep = document.querySelector(`.caption-step-cell[data-step="${currentPatternStep}"]`);
+            if (currentCaptionStep) {
+                currentCaptionStep.classList.add('current');
+            }
+            
+            // 播放当前步进的声音
+            allTracks.forEach(track => {
+                const trackData = blocks[currentBlock].data[track.id];
+                
+                if (pitchTracks.includes(track)) {
+                    // 音高轨道
+                    if (trackData && trackData.active[currentPatternStep]) {
+                        playSound(track.id, currentPatternStep);
+                    }
+                } else {
+                    // 鼓轨道
+                    if (trackData && trackData[currentPatternStep]) {
+                        playSound(track.id);
+                    }
+                }
+            });
+            
+            // 更新字幕显示（只在有字幕时才更新，且字幕音序器打开时）
+            const currentCaption = blocks[currentBlock].caption[currentPatternStep];
+            if (currentCaption !== undefined && currentCaption !== "") {
+                showCaption(currentCaption, false);
+            }
+            // 如果没有字幕，保持当前显示的字幕不变（不隐藏）
+            
+            // 更新节拍指示器位置
+            const stepWidth = 100 / stepCount;
+            beatIndicator.style.left = `${currentPatternStep * stepWidth}%`;
+            
+            // 前进到下一步
+            currentPatternStep++;
+            currentStep++;
+            
+            // 检查是否到达当前pattern的末尾
+            if (currentPatternStep >= stepCount) {
+                currentPatternStep = 0;
+                
+                // 如果不是循环当前pattern，移动到下一个pattern
+                if (!loopCurrentPattern) {
+                    // 移动到下一个block
+                    const nextBlock = (currentBlock + 1) % blocks.length;
+                    setCurrentBlock(nextBlock);
+                }
+            }
+            
+            // 计算下一步的时间间隔（基于BPM）
+            const stepDuration = 60 / bpm / 4; // 16分音符的持续时间
+            
+            // 设置下一步的定时器
+            timerId = setTimeout(playSequence, stepDuration * 1000);
+        }
+        
+        // 开始播放
+        function startPlayback() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            playBtn.textContent = "⏸ PAUSE";
+            
+            // 如果音频上下文处于暂停状态，恢复它
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            // 开始播放序列
+            playSequence();
+        }
+        
+        // 暂停播放（不重置进度）
+        function pausePlayback() {
+            if (!isPlaying) return;
+            
+            isPlaying = false;
+            playBtn.textContent = "▶ PLAY";
+            
+            if (timerId) {
+                clearTimeout(timerId);
+                timerId = null;
+            }
+            
+            // 不移除当前步进指示，保留当前状态
+            // 不重置节拍指示器位置
+            // 不重置currentPatternStep和currentStep
+        }
+        
+        // 停止播放（重置进度）
+        function stopPlayback() {
+            isPlaying = false;
+            playBtn.textContent = "▶ PLAY";
+            
+            if (timerId) {
+                clearTimeout(timerId);
+                timerId = null;
+            }
+            
+            // 移除当前步进指示
+            const allSteps = document.querySelectorAll('.step-cell');
+            allSteps.forEach(step => step.classList.remove('current'));
+            
+            const captionSteps = document.querySelectorAll('.caption-step-cell');
+            captionSteps.forEach(step => step.classList.remove('current'));
+            
+            // 重置节拍指示器
+            beatIndicator.style.left = "0%";
+            currentPatternStep = 0;
+            currentStep = 0;
+            
+            // 清除字幕显示
+            clearCaptionDisplay();
+            
+            // 回到第一个pattern
+            setCurrentBlock(0);
+        }
+        
+        // 切换循环模式
+        function toggleLoopMode() {
+            loopCurrentPattern = !loopCurrentPattern;
+            loopBtn.textContent = loopCurrentPattern ? "LOOP ON" : "LOOP";
+            loopBtn.classList.toggle('active', loopCurrentPattern);
+        }
+        
+        // 切换字幕音序器显示
+        function toggleCaptionSequencer() {
+            isCaptionVisible = !isCaptionVisible;
+            captionSequencer.classList.toggle('active', isCaptionVisible);
+            captionBtn.classList.toggle('active', isCaptionVisible);
+            
+            // 如果隐藏字幕音序器，也隐藏字幕显示
+            if (!isCaptionVisible) {
+                clearCaptionDisplay();
+            }
+        }
+        
+        // 切换帮助窗口显示
+        function toggleHelpWindow() {
+            isHelpVisible = !isHelpVisible;
+            helpWindow.classList.toggle('active', isHelpVisible);
+            overlay.classList.toggle('active', isHelpVisible);
+        }
+        
+        // 新建工程（回到默认状态）
+        function newProject() {
+            if (confirm('Are you sure you want to create a new project? All unsaved changes will be lost.')) {
+                // 重置所有状态
+                isPlaying = false;
+                loopCurrentPattern = false;
+                currentStep = 0;
+                currentPatternStep = 0;
+                bpm = 120;
+                bpmSlider.value = bpm;
+                bpmValue.textContent = bpm;
+                timeSignature = 4;
+                currentOctave = 4;
+                currentOctaveDisplay.textContent = currentOctave;
+                selectedNote = 60;
+                mutedTracks = {};
+                currentCaption = "";
+                clearCaptionDisplay();
+                isCaptionVisible = false;
+                captionSequencer.classList.remove('active');
+                captionBtn.classList.remove('active');
+                isHelpVisible = false;
+                helpWindow.classList.remove('active');
+                overlay.classList.remove('active');
+                
+                // 重置拍号按钮
+                timeSignatureBtns.forEach(btn => {
+                    btn.classList.toggle('active', parseInt(btn.dataset.time) === timeSignature);
+                });
+                
+                // 重置轨道设置
+                trackSettings = JSON.parse(JSON.stringify(defaultTrackSettings));
+                
+                // 重新初始化blocks
+                initBlocks();
+                
+                // 重新渲染高级设置
+                renderAdvancedSettings();
+                
+                // 重新渲染钢琴键盘
+                renderPianoKeyboard();
+                
+                // 停止播放
+                stopPlayback();
+                
+                alert('New project created!');
+            }
+        }
+        
+        // 清除当前pattern
+        function clearCurrentPattern() {
+            allTracks.forEach(track => {
+                const trackData = blocks[currentBlock].data[track.id];
+                
+                if (pitchTracks.includes(track)) {
+                    // 音高轨道
+                    if (trackData) {
+                        trackData.active.fill(false);
+                        trackData.notes.fill(track.defaultNote);
+                    }
+                } else {
+                    // 鼓轨道
+                    if (trackData) {
+                        trackData.fill(false);
+                    }
+                }
+            });
+            
+            // 清除字幕
+            blocks[currentBlock].caption.fill("");
+            
+            renderSequencerGrid();
+            renderCaptionSequencer();
+        }
+        
+        // 切换全屏模式
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+                fullscreenBtn.textContent = "EXIT FULLSCREEN";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    fullscreenBtn.textContent = "FULLSCREEN";
+                }
+            }
+        }
+        
+        // 监听全屏变化
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                fullscreenBtn.textContent = "FULLSCREEN";
+            }
+        });
+        
+        // 导出为歌曲文件
+        function exportSong() {
+            // 检查是否有字幕数据
+            let hasCaptionData = false;
+            blocks.forEach(block => {
+                if (block.caption && block.caption.some(caption => caption && caption.trim() !== '')) {
+                    hasCaptionData = true;
+                }
+            });
+            
+            const exportData = {
+                version: "1.3", // 更新版本号以支持三角波bitcrush参数
+                bpm: bpm,
+                timeSignature: timeSignature,
+                loopMode: loopCurrentPattern,
+                mutedTracks: mutedTracks,
+                trackSettings: trackSettings,
+                selectedNote: selectedNote,
+                currentOctave: currentOctave,
+                blocks: blocks.map(block => {
+                    const blockExport = {
+                        name: block.name,
+                        data: {}
+                    };
+                    
+                    allTracks.forEach(track => {
+                        blockExport.data[track.id] = block.data[track.id];
+                    });
+                    
+                    // 只有在有字幕数据时才包含caption字段
+                    if (hasCaptionData) {
+                        blockExport.caption = block.caption;
+                    }
+                    
+                    return blockExport;
+                })
+            };
+            
+            // 创建JSON字符串
+            const songData = JSON.stringify(exportData, null, 2);
+            
+            // 创建Blob对象
+            const blob = new Blob([songData], { type: 'application/json' });
+            
+            // 创建下载链接
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'untitled.song';
+            
+            // 触发下载
+            document.body.appendChild(a);
+            a.click();
+            
+            // 清理
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
+        
+        // 导入歌曲文件
+        function importSong(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const importData = JSON.parse(e.target.result);
+                    
+                    // 处理兼容性：如果只有square轨道，将数据转移到square_a
+                    if (importData.trackSettings && importData.trackSettings.square && !importData.trackSettings.square_a) {
+                        importData.trackSettings.square_a = { ...importData.trackSettings.square };
+                        delete importData.trackSettings.square;
+                    }
+                    
+                    // 处理blocks中的数据
+                    if (importData.blocks) {
+                        importData.blocks.forEach(block => {
+                            if (block.data) {
+                                // 如果只有square轨道数据，转移到square_a
+                                if (block.data.square && !block.data.square_a) {
+                                    block.data.square_a = block.data.square;
+                                    delete block.data.square;
+                                }
+                            }
+                        });
+                    }
+                    
+                    // 使用默认值增强兼容性
+                    const enhancedData = enhanceImportData(importData);
+                    
+                    // 更新BPM
+                    bpm = enhancedData.bpm;
+                    bpmSlider.value = bpm;
+                    bpmValue.textContent = bpm;
+                    
+                    // 更新拍号
+                    timeSignature = enhancedData.timeSignature;
+                    timeSignatureBtns.forEach(btn => {
+                        btn.classList.toggle('active', parseInt(btn.dataset.time) === timeSignature);
+                    });
+                    updateStepCount();
+                    
+                    // 更新循环模式
+                    if (enhancedData.loopMode !== undefined) {
+                        loopCurrentPattern = enhancedData.loopMode;
+                        loopBtn.textContent = loopCurrentPattern ? "LOOP ON" : "LOOP";
+                        loopBtn.classList.toggle('active', loopCurrentPattern);
+                    }
+                    
+                    // 更新静音轨道
+                    if (enhancedData.mutedTracks) {
+                        mutedTracks = enhancedData.mutedTracks;
+                    }
+                    
+                    // 更新轨道设置
+                    if (enhancedData.trackSettings) {
+                        // 合并轨道设置，缺失的参数使用默认值
+                        allTracks.forEach(track => {
+                            if (enhancedData.trackSettings[track.id]) {
+                                // 合并现有设置
+                                trackSettings[track.id] = {
+                                    ...defaultTrackSettings[track.id],
+                                    ...enhancedData.trackSettings[track.id]
+                                };
+                            }
+                        });
+                        renderAdvancedSettings();
+                    }
+                    
+                    // 更新选中的音符和八度
+                    if (enhancedData.selectedNote) {
+                        selectedNote = enhancedData.selectedNote;
+                    }
+                    
+                    if (enhancedData.currentOctave) {
+                        currentOctave = enhancedData.currentOctave;
+                        currentOctaveDisplay.textContent = currentOctave;
+                    }
+                    
+                    // 更新blocks
+                    if (enhancedData.blocks && enhancedData.blocks.length > 0) {
+                        blocks = enhancedData.blocks.map((block, index) => {
+                            // 确保每个轨道的数据结构正确
+                            const enhancedBlockData = {
+                                id: index,
+                                name: block.name || `Pattern ${index + 1}`,
+                                data: {},
+                                caption: block.caption || new Array(stepCount).fill("")
+                            };
+                            
+                            allTracks.forEach(track => {
+                                if (block.data && block.data[track.id]) {
+                                    // 如果导入的数据中有这个轨道的数据，使用它
+                                    enhancedBlockData.data[track.id] = block.data[track.id];
+                                } else {
+                                    // 否则创建默认数据
+                                    if (pitchTracks.includes(track)) {
+                                        enhancedBlockData.data[track.id] = {
+                                            active: new Array(stepCount).fill(false),
+                                            notes: new Array(stepCount).fill(track.defaultNote)
+                                        };
+                                    } else {
+                                        enhancedBlockData.data[track.id] = new Array(stepCount).fill(false);
+                                    }
+                                }
+                            });
+                            
+                            return enhancedBlockData;
+                        });
+                    } else {
+                        // 如果没有blocks数据，创建一个默认block
+                        initBlocks();
+                    }
+                    
+                    // 设置当前block为第一个
+                    setCurrentBlock(0);
+                    
+                    // 重新渲染钢琴键盘
+                    renderPianoKeyboard();
+                    
+                    // 重新渲染字幕音序器
+                    renderCaptionSequencer();
+                    
+                    alert('Song imported successfully!');
+                } catch (error) {
+                    alert(`Import failed: ${error.message}`);
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('Error reading file');
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        // 增强导入数据，使用默认值填充缺失的参数
+        function enhanceImportData(importData) {
+            const enhancedData = { ...importData };
+            
+            // 确保必需字段存在
+            if (enhancedData.bpm === undefined) enhancedData.bpm = 120;
+            if (enhancedData.timeSignature === undefined) enhancedData.timeSignature = 4;
+            if (enhancedData.loopMode === undefined) enhancedData.loopMode = false;
+            if (enhancedData.mutedTracks === undefined) enhancedData.mutedTracks = {};
+            if (enhancedData.selectedNote === undefined) enhancedData.selectedNote = 60;
+            if (enhancedData.currentOctave === undefined) enhancedData.currentOctave = 4;
+            
+            // 确保trackSettings存在并补全缺失的轨道
+            if (enhancedData.trackSettings === undefined) {
+                enhancedData.trackSettings = JSON.parse(JSON.stringify(defaultTrackSettings));
+            } else {
+                // 补全缺失的轨道设置
+                allTracks.forEach(track => {
+                    if (!enhancedData.trackSettings[track.id]) {
+                        enhancedData.trackSettings[track.id] = { ...defaultTrackSettings[track.id] };
+                    } else {
+                        // 补全轨道内缺失的参数（包括颤音参数和bitcrush参数）
+                        Object.keys(defaultTrackSettings[track.id]).forEach(key => {
+                            if (enhancedData.trackSettings[track.id][key] === undefined) {
+                                enhancedData.trackSettings[track.id][key] = defaultTrackSettings[track.id][key];
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // 确保blocks存在
+            if (enhancedData.blocks === undefined) {
+                enhancedData.blocks = [];
+            }
+            
+            return enhancedData;
+        }
+        
+        // 添加默认pattern用于演示
+        function addDefaultPattern() {
+            setTimeout(() => {
+                const kickPattern = [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0];
+                const snarePattern = [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0];
+                const hihatPattern = [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0];
+                
+                // 应用到第一个block
+                blocks[0].data.kick = [...kickPattern];
+                blocks[0].data.snare = [...snarePattern];
+                blocks[0].data.hihat = [...hihatPattern];
+                
+                // 添加一些音高轨道数据
+                const trianglePattern = [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0];
+                const triangleNotes = [60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60];
+                triangleNotes[0] = 60;
+                triangleNotes[4] = 64;
+                triangleNotes[8] = 67;
+                triangleNotes[12] = 64;
+                
+                blocks[0].data.triangle = {
+                    active: [...trianglePattern],
+                    notes: [...triangleNotes]
+                };
+                
+                // 按照要求，默认工程不包含任何字幕
+                // blocks[0].caption[0] = "Hello!";
+                
+                // 渲染更新
+                renderSequencerGrid();
+                renderCaptionSequencer();
+            }, 500);
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            playBtn.addEventListener('click', () => {
+                if (isPlaying) {
+                    pausePlayback(); // 暂停播放，不重置进度
+                } else {
+                    startPlayback();
+                }
+            });
+            
+            loopBtn.addEventListener('click', toggleLoopMode);
+            
+            stopBtn.addEventListener('click', stopPlayback);
+            
+            newBtn.addEventListener('click', newProject);
+            
+            clearBtn.addEventListener('click', clearCurrentPattern);
+            
+            advanceBtn.addEventListener('click', () => {
+                advanceSettings.classList.toggle('active');
+                advanceBtn.classList.toggle('active');
+                advanceBtn.textContent = advanceSettings.classList.contains('active') ? 'HIDE' : 'ADVANCE';
+            });
+            
+            captionBtn.addEventListener('click', toggleCaptionSequencer);
+            
+            helpBtn.addEventListener('click', toggleHelpWindow);
+            
+            helpClose.addEventListener('click', toggleHelpWindow);
+            
+            overlay.addEventListener('click', toggleHelpWindow);
+            
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            
+            // 修改BPM滑块事件：更改BPM时不更改播放进度
+            bpmSlider.addEventListener('input', function() {
+                bpm = parseInt(this.value);
+                bpmValue.textContent = bpm;
+                // 注意：不再重新启动播放，只更新BPM值
+            });
+            
+            // 拍号按钮
+            timeSignatureBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const newTimeSignature = parseInt(this.dataset.time);
+                    if (timeSignature !== newTimeSignature) {
+                        timeSignature = newTimeSignature;
+                        
+                        // 更新按钮状态
+                        timeSignatureBtns.forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        
+                        // 更新步数
+                        updateStepCount();
+                        
+                        // 如果正在播放，重新启动
+                        if (isPlaying) {
+                            stopPlayback();
+                            startPlayback();
+                        }
+                    }
+                });
+            });
+            
+            // Block控制按钮
+            addBlockBtn.addEventListener('click', addNewBlock);
+            removeBlockBtn.addEventListener('click', removeCurrentBlock);
+            duplicateBlockBtn.addEventListener('click', duplicateCurrentBlock);
+            renameBlockBtn.addEventListener('click', renameCurrentBlock);
+            moveLeftBtn.addEventListener('click', moveBlockLeft);
+            moveRightBtn.addEventListener('click', moveBlockRight);
+            
+            // 钢琴键盘控制按钮
+            octaveDownBtn.addEventListener('click', decreaseOctave);
+            octaveUpBtn.addEventListener('click', increaseOctave);
+            
+            // 歌曲导出/导入按钮
+            exportBtn.addEventListener('click', exportSong);
+            importFile.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    if (file.name.endsWith('.song')) {
+                        importSong(file);
+                    } else {
+                        alert('Please select a .song file');
+                    }
+                }
+                // 重置文件输入
+                e.target.value = '';
+            });
+            
+            // 键盘快捷键
+            document.addEventListener('keydown', (e) => {
+                // 空格键切换播放/暂停
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    if (isPlaying) {
+                        pausePlayback(); // 暂停播放，不重置进度
+                    } else {
+                        startPlayback();
+                    }
+                }
+                
+                // Escape停止播放并重置进度
+                if (e.code === 'Escape') {
+                    stopPlayback();
+                }
+                
+                // 左Ctrl键控制loop按钮
+                if (e.code === 'ControlLeft' && !e.repeat) {
+                    toggleLoopMode();
+                }
+                
+                // 左右箭头键导航blocks
+                if (e.code === 'ArrowLeft') {
+                    const newBlock = (currentBlock - 1 + blocks.length) % blocks.length;
+                    setCurrentBlock(newBlock);
+                }
+                if (e.code === 'ArrowRight') {
+                    const newBlock = (currentBlock + 1) % blocks.length;
+                    setCurrentBlock(newBlock);
+                }
+                
+                // Z和X键调整八度
+                if (e.code === 'KeyZ') {
+                    decreaseOctave();
+                }
+                if (e.code === 'KeyX') {
+                    increaseOctave();
+                }
+                
+                // Q和W键调整半音
+                if (e.code === 'KeyQ') {
+                    decreaseSemitone();
+                }
+                if (e.code === 'KeyW') {
+                    increaseSemitone();
+                }
+                
+                // F键切换全屏
+                if (e.code === 'KeyF') {
+                    toggleFullscreen();
+                }
+                
+                // N键新建工程
+                if (e.code === 'KeyN' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    newProject();
+                }
+                
+                // C键切换字幕音序器
+                if (e.code === 'KeyC' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    toggleCaptionSequencer();
+                }
+                
+                // H键切换帮助窗口
+                if (e.code === 'KeyH' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    toggleHelpWindow();
+                }
+                
+                // 数字键1-7控制钢琴键盘白键
+                if (e.code >= 'Digit1' && e.code <= 'Digit7') {
+                    const index = parseInt(e.code.replace('Digit', '')) - 1;
+                    const whiteKeys = document.querySelectorAll('.white-key');
+                    if (index < whiteKeys.length) {
+                        const key = whiteKeys[index];
+                        const midiNote = parseInt(key.dataset.note);
+                        selectedNote = midiNote;
+                        
+                        // 更新键盘显示
+                        document.querySelectorAll('.piano-key').forEach(k => {
+                            k.classList.remove('active');
+                        });
+                        key.classList.add('active');
+                        
+                        // 播放预览声音（使用方波）
+                        playSoundPreview(midiNote);
+                    }
+                }
+            });
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
