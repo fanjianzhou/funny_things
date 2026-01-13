@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>增强版泡沫模拟器 - 高性能粒子系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e0f7fa 0%, #bbdefb 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            color: #546e7a;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+
+        .performance-badge {
+            display: inline-block;
+            background: linear-gradient(to right, #4CAF50, #8BC34A);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 1400px;
+            height: 80vh;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.1),
+                0 8px 16px rgba(0, 0, 0, 0.05),
+                inset 0 2px 4px rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .simulation-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(160deg, #81d4fa 0%, #b3e5fc 50%, #e1f5fe 100%);
+        }
+
+        #bubbleCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .control-panel {
+            width: 380px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 25px;
+            overflow-y: auto;
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 
+                -10px 0 20px rgba(0, 0, 0, 0.05),
+                inset 5px 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .panel-title {
+            font-size: 1.4rem;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #bbdefb;
+            display: flex;
+            align-items: center;
+        }
+
+        .panel-title i {
+            margin-right: 10px;
+            color: #29b6f6;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 18px;
+            border-radius: 16px;
+            box-shadow: 
+                0 4px 8px rgba(0, 0, 0, 0.05),
+                inset 0 2px 4px rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .control-group h3 {
+            font-size: 1.1rem;
+            color: #37474f;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .control-group h3 i {
+            margin-right: 8px;
+            color: #29b6f6;
+        }
+
+        .slider-container {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            color: #546e7a;
+        }
+
+        .slider-label span:last-child {
+            font-weight: 600;
+            color: #0277bd;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: linear-gradient(to right, #bbdefb, #29b6f6);
+            outline: none;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+            border: 2px solid #29b6f6;
+            transition: all 0.2s;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, #29b6f6, #0288d1);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(to right, #b3e5fc, #81d4fa);
+            color: #01579b;
+        }
+
+        .btn-warning {
+            background: linear-gradient(to right, #FF9800, #F57C00);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 25px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            box-shadow: 
+                0 4px 8px rgba(0, 0, 0, 0.05),
+                inset 0 2px 4px rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0277bd;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #546e7a;
+            margin-top: 5px;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 18px;
+            border-radius: 16px;
+            margin-top: 25px;
+            font-size: 0.95rem;
+            color: #546e7a;
+            box-shadow: 
+                0 4px 8px rgba(0, 0, 0, 0.05),
+                inset 0 2px 4px rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .instructions h3 {
+            color: #37474f;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .instructions h3 i {
+            margin-right: 8px;
+            color: #29b6f6;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .footer {
+            margin-top: 25px;
+            text-align: center;
+            color: #546e7a;
+            font-size: 0.9rem;
+            padding: 15px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1000px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .control-panel {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid rgba(255, 255, 255, 0.5);
+            }
+            
+            .simulation-area {
+                height: 60vh;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-bubbles"></i> 增强版泡沫模拟器</h1>
+        <p class="subtitle">高性能粒子系统 | 改进的相交避免算法 | 清新拟物风格界面</p>
+        <div class="performance-badge">
+            <i class="fas fa-bolt"></i> 优化性能 - 支持最多5000个粒子
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="simulation-area">
+            <canvas id="bubbleCanvas"></canvas>
+        </div>
+        
+        <div class="control-panel">
+            <div class="panel-title">
+                <i class="fas fa-sliders-h"></i> 控制面板
+            </div>
+            
+            <div class="control-group">
+                <h3><i class="fas fa-tint"></i> 泡沫参数</h3>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>泡沫数量</span>
+                        <span id="bubbleCountValue">1500</span>
+                    </div>
+                    <input type="range" min="100" max="5000" value="1500" class="slider" id="bubbleCount">
+                </div>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>泡沫大小分布</span>
+                        <span id="sizeDistributionValue">0.7</span>
+                    </div>
+                    <input type="range" min="0.1" max="1.5" step="0.1" value="0.7" class="slider" id="sizeDistribution">
+                </div>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>泡沫寿命</span>
+                        <span id="lifespanValue">0.8</span>
+                    </div>
+                    <input type="range" min="0.2" max="2" step="0.1" value="0.8" class="slider" id="lifespan">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3><i class="fas fa-wind"></i> 流动与噪声</h3>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>流动强度</span>
+                        <span id="flowIntensityValue">0.5</span>
+                    </div>
+                    <input type="range" min="0" max="1" step="0.1" value="0.5" class="slider" id="flowIntensity">
+                </div>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>噪声尺度</span>
+                        <span id="noiseScaleValue">0.01</span>
+                    </div>
+                    <input type="range" min="0.001" max="0.03" step="0.001" value="0.01" class="slider" id="noiseScale">
+                </div>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>泡沫内聚性</span>
+                        <span id="cohesionValue">0.3</span>
+                    </div>
+                    <input type="range" min="0" max="1" step="0.1" value="0.3" class="slider" id="cohesion">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3><i class="fas fa-object-ungroup"></i> 碰撞避免系统</h3>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>每帧迭代次数</span>
+                        <span id="collisionIterationsValue">3</span>
+                    </div>
+                    <input type="range" min="1" max="10" step="1" value="3" class="slider" id="collisionIterations">
+                    <div style="font-size: 0.8rem; color: #78909c; margin-top: 5px;">
+                        增加迭代次数可提高避免相交效果，但会影响性能
+                    </div>
+                </div>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>避免相交强度</span>
+                        <span id="collisionStrengthValue">0.5</span>
+                    </div>
+                    <input type="range" min="0.1" max="1.5" step="0.1" value="0.5" class="slider" id="collisionStrength">
+                    <div style="font-size: 0.8rem; color: #78909c; margin-top: 5px;">
+                        正值使粒子远离，负值使粒子靠近（实验性）
+                    </div>
+                </div>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>检测半径</span>
+                        <span id="detectionRadiusValue">100</span>
+                    </div>
+                    <input type="range" min="20" max="200" step="10" value="100" class="slider" id="detectionRadius">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3><i class="fas fa-palette"></i> 外观与性能</h3>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>透明度</span>
+                        <span id="opacityValue">0.7</span>
+                    </div>
+                    <input type="range" min="0.3" max="1" step="0.1" value="0.7" class="slider" id="opacity">
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" id="resetBtn">
+                        <i class="fas fa-redo"></i> 重置模拟
+                    </button>
+                    <button class="btn btn-secondary" id="randomizeBtn">
+                        <i class="fas fa-random"></i> 随机设置
+                    </button>
+                    <button class="btn btn-warning" id="performanceBtn">
+                        <i class="fas fa-tachometer-alt"></i> 性能模式
+                    </button>
+                </div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="activeBubbles">1500</div>
+                    <div class="stat-label">活跃泡沫</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="collisions">0</div>
+                    <div class="stat-label">碰撞/帧</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="fpsCounter">60</div>
+                    <div class="stat-label">FPS</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="burstBubbles">0</div>
+                    <div class="stat-label">破裂泡沫</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="avgDistance">0</div>
+                    <div class="stat-label">平均间距</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="processingTime">0</div>
+                    <div class="stat-label">处理时间(ms)</div>
+                </div>
+            </div>
+            
+            <div class="instructions">
+                <h3><i class="fas fa-info-circle"></i> 改进说明</h3>
+                <p>增强版泡沫模拟器引入了以下改进：</p>
+                <ul>
+                    <li><strong>高性能支持</strong>：粒子数量上限提升至5000个</li>
+                    <li><strong>改进的相交避免算法</strong>：每帧多次迭代，避免粒子相交</li>
+                    <li><strong>空间分割优化</strong>：使用网格系统提高碰撞检测性能</li>
+                    <li><strong>实时统计</strong>：显示碰撞次数、平均间距和处理时间</li>
+                </ul>
+                <p style="margin-top: 10px;">点击泡沫可以使其提前破裂，观察周围泡沫的靠拢效果。</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>增强版泡沫模拟器 &copy; 2023 | 使用高性能粒子系统和空间分割优化</p>
+    </div>
+
+    <script>
+        // 获取Canvas元素和上下文
+        const canvas = document.getElementById('bubbleCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 设置Canvas尺寸
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // 泡沫粒子类
+        class Bubble {
+            constructor(x, y, radius, lifespan, color) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.originalRadius = radius;
+                this.lifespan = lifespan;
+                this.maxLifespan = lifespan;
+                this.color = color;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.opacity = 0.7;
+                this.bursting = false;
+                this.burstProgress = 0;
+                this.burstSpeed = 0.05 + Math.random() * 0.05;
+                this.id = Math.random().toString(36).substr(2, 9);
+                this.collisionCount = 0; // 碰撞计数
+            }
+
+            // 更新泡沫状态
+            update(deltaTime, flowField, cohesion) {
+                // 更新位置
+                this.x += this.vx * deltaTime;
+                this.y += this.vy * deltaTime;
+                
+                // 应用流动场（噪声旋度场）
+                const flow = flowField.getFlow(this.x, this.y);
+                this.vx += flow.x * 0.1;
+                this.vy += flow.y * 0.1;
+                
+                // 应用内聚性（泡沫互相靠近的趋势）
+                this.vx *= (1 - cohesion * 0.01);
+                this.vy *= (1 - cohesion * 0.01);
+                
+                // 边界约束
+                this.constrainToBounds();
+                
+                // 更新寿命
+                if (!this.bursting) {
+                    this.lifespan -= deltaTime * (0.5 / this.originalRadius); // 大泡沫寿命更短
+                    
+                    // 如果寿命结束，开始破裂
+                    if (this.lifespan <= 0) {
+                        this.bursting = true;
+                    }
+                }
+                
+                // 更新破裂动画
+                if (this.bursting) {
+                    this.burstProgress += this.burstSpeed * deltaTime;
+                    this.radius = this.originalRadius * (1 - this.burstProgress);
+                    this.opacity = 0.7 * (1 - this.burstProgress);
+                    
+                    // 破裂完成后标记为可移除
+                    if (this.burstProgress >= 1) {
+                        return false; // 返回false表示应移除该泡沫
+                    }
+                }
+                
+                return true; // 返回true表示泡沫仍然活跃
+            }
+
+            // 约束泡沫在Canvas边界内
+            constrainToBounds() {
+                const margin = this.radius;
+                
+                if (this.x < margin) {
+                    this.x = margin;
+                    this.vx = Math.abs(this.vx) * 0.8;
+                } else if (this.x > canvas.width - margin) {
+                    this.x = canvas.width - margin;
+                    this.vx = -Math.abs(this.vx) * 0.8;
+                }
+                
+                if (this.y < margin) {
+                    this.y = margin;
+                    this.vy = Math.abs(this.vy) * 0.8;
+                } else if (this.y > canvas.height - margin) {
+                    this.y = canvas.height - margin;
+                    this.vy = -Math.abs(this.vy) * 0.8;
+                }
+                
+                // 速度衰减
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+            }
+
+            // 绘制泡沫
+            draw() {
+                // 泡沫主体
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                
+                // 创建渐变填充
+                const gradient = ctx.createRadialGradient(
+                    this.x - this.radius/3, 
+                    this.y - this.radius/3, 
+                    0,
+                    this.x, 
+                    this.y, 
+                    this.radius
+                );
+                
+                gradient.addColorStop(0, `rgba(255, 255, 255, ${this.opacity * 0.9})`);
+                gradient.addColorStop(0.7, this.color.replace('0.7', this.opacity.toString()));
+                gradient.addColorStop(1, this.color.replace('0.7', (this.opacity * 0.3).toString()));
+                
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                // 泡沫高光
+                ctx.beginPath();
+                ctx.arc(
+                    this.x - this.radius/3, 
+                    this.y - this.radius/3, 
+                    this.radius/3, 
+                    0, 
+                    Math.PI * 2
+                );
+                
+                const highlightGradient = ctx.createRadialGradient(
+                    this.x - this.radius/3, 
+                    this.y - this.radius/3, 
+                    0,
+                    this.x - this.radius/3, 
+                    this.y - this.radius/3, 
+                    this.radius/3
+                );
+                
+                highlightGradient.addColorStop(0, `rgba(255, 255, 255, ${this.opacity * 0.8})`);
+                highlightGradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
+                
+                ctx.fillStyle = highlightGradient;
+                ctx.fill();
+                
+                // 泡沫边框（清新效果）
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${this.opacity * 0.6})`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            // 检查是否被点击
+            isClicked(mouseX, mouseY) {
+                const distance = Math.sqrt(
+                    Math.pow(mouseX - this.x, 2) + Math.pow(mouseY - this.y, 2)
+                );
+                return distance <= this.radius;
+            }
+
+            // 开始破裂
+            burst() {
+                if (!this.bursting) {
+                    this.bursting = true;
+                    this.burstSpeed = 0.1 + Math.random() * 0.1; // 加快破裂速度
+                }
+            }
+            
+            // 获取网格键值（用于空间分割）
+            getGridKey(gridSize) {
+                const gridX = Math.floor(this.x / gridSize);
+                const gridY = Math.floor(this.y / gridSize);
+                return `${gridX},${gridY}`;
+            }
+        }
+
+        // 噪声旋度场类
+        class FlowField {
+            constructor(scale, intensity) {
+                this.scale = scale;
+                this.intensity = intensity;
+                this.time = 0;
+            }
+
+            // 改进的噪声函数（模拟Perlin噪声）
+            noise(x, y, t) {
+                // 使用多个正弦波叠加创建更自然的伪随机噪声
+                return Math.sin(x * this.scale * 0.5 + t * 0.7) * 
+                       Math.cos(y * this.scale * 0.3 + t * 0.5) * 
+                       Math.sin(x * this.scale * 0.7 + y * this.scale * 0.2 + t * 1.2) *
+                       Math.cos(x * this.scale * 0.1 + y * this.scale * 0.4 + t * 0.9);
+            }
+
+            // 获取旋度场向量（无散度向量场）
+            getFlow(x, y) {
+                this.time += 0.01;
+                
+                // 计算噪声值
+                const n = this.noise(x, y, this.time);
+                const nx = this.noise(x + 100, y, this.time);
+                const ny = this.noise(x, y + 100, this.time);
+                
+                // 计算梯度（近似）
+                const dx = (nx - n) * this.intensity;
+                const dy = (ny - n) * this.intensity;
+                
+                // 旋度场：旋转梯度90度 (dx, dy) -> (dy, -dx)
+                return {
+                    x: dy * 2,
+                    y: -dx * 2
+                };
+            }
+        }
+
+        // 空间分割网格系统（提高碰撞检测性能）
+        class SpatialGrid {
+            constructor(cellSize) {
+                this.cellSize = cellSize;
+                this.grid = new Map();
+            }
+            
+            // 清空网格
+            clear() {
+                this.grid.clear();
+            }
+            
+            // 插入粒子到网格
+            insert(bubble) {
+                const key = bubble.getGridKey(this.cellSize);
+                if (!this.grid.has(key)) {
+                    this.grid.set(key, []);
+                }
+                this.grid.get(key).push(bubble);
+            }
+            
+            // 获取附近粒子（只检查相邻网格）
+            getNearby(bubble, detectionRadius) {
+                const nearby = [];
+                const centerX = Math.floor(bubble.x / this.cellSize);
+                const centerY = Math.floor(bubble.y / this.cellSize);
+                
+                // 检查3x3的网格区域
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const key = `${centerX + dx},${centerY + dy}`;
+                        if (this.grid.has(key)) {
+                            const cellBubbles = this.grid.get(key);
+                            for (const other of cellBubbles) {
+                                if (other !== bubble) {
+                                    // 计算距离
+                                    const distance = Math.sqrt(
+                                        Math.pow(bubble.x - other.x, 2) + 
+                                        Math.pow(bubble.y - other.y, 2)
+                                    );
+                                    
+                                    // 只返回在检测半径内的粒子
+                                    if (distance <= detectionRadius) {
+                                        nearby.push(other);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                return nearby;
+            }
+        }
+
+        // 增强版泡沫模拟器主类
+        class EnhancedBubbleSimulator {
+            constructor() {
+                this.bubbles = [];
+                this.flowField = new FlowField(0.01, 0.5);
+                this.spatialGrid = new SpatialGrid(100); // 网格大小为100像素
+                this.lastTime = 0;
+                this.activeBubbles = 0;
+                this.burstBubbles = 0;
+                this.collisionsPerFrame = 0;
+                this.totalCollisions = 0;
+                this.avgDistance = 0;
+                this.fps = 60;
+                this.fpsFrameCount = 0;
+                this.fpsLastTime = 0;
+                this.processingTime = 0;
+                this.performanceMode = false;
+                
+                // 默认参数
+                this.params = {
+                    bubbleCount: 1500,
+                    sizeDistribution: 0.7,
+                    lifespan: 0.8,
+                    flowIntensity: 0.5,
+                    noiseScale: 0.01,
+                    cohesion: 0.3,
+                    opacity: 0.7,
+                    collisionIterations: 3,
+                    collisionStrength: 0.5,
+                    detectionRadius: 100
+                };
+                
+                this.init();
+            }
+
+            // 初始化
+            init() {
+                this.createBubbles();
+                this.setupEventListeners();
+                this.animate(0);
+            }
+
+            // 创建泡沫
+            createBubbles() {
+                this.bubbles = [];
+                this.activeBubbles = 0;
+                this.burstBubbles = 0;
+                this.totalCollisions = 0;
+                this.collisionsPerFrame = 0;
+                
+                // 自定义泡沫大小分布：大泡沫极少，中泡泡较多，小泡泡大量
+                for (let i = 0; i < this.params.bubbleCount; i++) {
+                    // 使用指数分布控制大小
+                    const sizeFactor = Math.pow(Math.random(), this.params.sizeDistribution);
+                    
+                    // 将大小映射到不同范围
+                    let radius;
+                    if (sizeFactor < 0.7) {
+                        // 小泡沫 (70%)
+                        radius = 3 + sizeFactor * 7;
+                    } else if (sizeFactor < 0.95) {
+                        // 中泡沫 (25%)
+                        radius = 10 + (sizeFactor - 0.7) * 15;
+                    } else {
+                        // 大泡沫 (5%)
+                        radius = 20 + (sizeFactor - 0.95) * 25;
+                    }
+                    
+                    // 随机位置，但尽量避免初始重叠
+                    let x, y, attempts = 0;
+                    do {
+                        x = Math.random() * canvas.width;
+                        y = Math.random() * canvas.height;
+                        attempts++;
+                    } while (this.isOverlapping(x, y, radius) && attempts < 10);
+                    
+                    // 泡沫颜色（不同大小的泡沫有不同颜色）
+                    let color;
+                    if (radius < 8) {
+                        color = `rgba(179, 229, 252, ${this.params.opacity})`; // 浅蓝色
+                    } else if (radius < 18) {
+                        color = `rgba(129, 212, 250, ${this.params.opacity})`; // 中蓝色
+                    } else {
+                        color = `rgba(41, 182, 246, ${this.params.opacity})`; // 深蓝色
+                    }
+                    
+                    // 创建泡沫（寿命与大小成反比）
+                    const lifespan = this.params.lifespan * (1 + Math.random()) * (30 / radius);
+                    this.bubbles.push(new Bubble(x, y, radius, lifespan, color));
+                    this.activeBubbles++;
+                }
+                
+                // 更新空间网格
+                this.updateSpatialGrid();
+            }
+            
+            // 检查新位置是否与现有泡沫重叠
+            isOverlapping(x, y, radius) {
+                for (const bubble of this.bubbles) {
+                    const distance = Math.sqrt(
+                        Math.pow(bubble.x - x, 2) + Math.pow(bubble.y - y, 2)
+                    );
+                    if (distance < bubble.radius + radius) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
+            // 更新空间网格
+            updateSpatialGrid() {
+                this.spatialGrid.clear();
+                for (const bubble of this.bubbles) {
+                    this.spatialGrid.insert(bubble);
+                }
+            }
+
+            // 设置事件监听器
+            setupEventListeners() {
+                // Canvas点击事件 - 点击泡沫使其破裂
+                canvas.addEventListener('click', (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    
+                    // 查找被点击的泡沫
+                    for (let i = this.bubbles.length - 1; i >= 0; i--) {
+                        if (this.bubbles[i].isClicked(mouseX, mouseY)) {
+                            this.bubbles[i].burst();
+                            break;
+                        }
+                    }
+                });
+                
+                // 参数控制事件
+                document.getElementById('bubbleCount').addEventListener('input', (e) => {
+                    this.params.bubbleCount = parseInt(e.target.value);
+                    document.getElementById('bubbleCountValue').textContent = this.params.bubbleCount;
+                    this.createBubbles();
+                });
+                
+                document.getElementById('sizeDistribution').addEventListener('input', (e) => {
+                    this.params.sizeDistribution = parseFloat(e.target.value);
+                    document.getElementById('sizeDistributionValue').textContent = this.params.sizeDistribution.toFixed(1);
+                    this.createBubbles();
+                });
+                
+                document.getElementById('lifespan').addEventListener('input', (e) => {
+                    this.params.lifespan = parseFloat(e.target.value);
+                    document.getElementById('lifespanValue').textContent = this.params.lifespan.toFixed(1);
+                    this.createBubbles();
+                });
+                
+                document.getElementById('flowIntensity').addEventListener('input', (e) => {
+                    this.params.flowIntensity = parseFloat(e.target.value);
+                    this.flowField.intensity = this.params.flowIntensity;
+                    document.getElementById('flowIntensityValue').textContent = this.params.flowIntensity.toFixed(1);
+                });
+                
+                document.getElementById('noiseScale').addEventListener('input', (e) => {
+                    this.params.noiseScale = parseFloat(e.target.value);
+                    this.flowField.scale = this.params.noiseScale;
+                    document.getElementById('noiseScaleValue').textContent = this.params.noiseScale.toFixed(3);
+                });
+                
+                document.getElementById('cohesion').addEventListener('input', (e) => {
+                    this.params.cohesion = parseFloat(e.target.value);
+                    document.getElementById('cohesionValue').textContent = this.params.cohesion.toFixed(1);
+                });
+                
+                document.getElementById('collisionIterations').addEventListener('input', (e) => {
+                    this.params.collisionIterations = parseInt(e.target.value);
+                    document.getElementById('collisionIterationsValue').textContent = this.params.collisionIterations;
+                });
+                
+                document.getElementById('collisionStrength').addEventListener('input', (e) => {
+                    this.params.collisionStrength = parseFloat(e.target.value);
+                    document.getElementById('collisionStrengthValue').textContent = this.params.collisionStrength.toFixed(1);
+                });
+                
+                document.getElementById('detectionRadius').addEventListener('input', (e) => {
+                    this.params.detectionRadius = parseInt(e.target.value);
+                    document.getElementById('detectionRadiusValue').textContent = this.params.detectionRadius;
+                });
+                
+                document.getElementById('opacity').addEventListener('input', (e) => {
+                    this.params.opacity = parseFloat(e.target.value);
+                    document.getElementById('opacityValue').textContent = this.params.opacity.toFixed(1);
+                    
+                    // 更新所有泡沫的透明度
+                    this.bubbles.forEach(bubble => {
+                        bubble.opacity = this.params.opacity;
+                        bubble.color = bubble.color.replace(/[\d\.]+\)$/, `${this.params.opacity})`);
+                    });
+                });
+                
+                // 按钮事件
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.createBubbles();
+                });
+                
+                document.getElementById('randomizeBtn').addEventListener('click', () => {
+                    this.randomizeParameters();
+                });
+                
+                document.getElementById('performanceBtn').addEventListener('click', () => {
+                    this.togglePerformanceMode();
+                });
+            }
+
+            // 随机化参数
+            randomizeParameters() {
+                // 随机设置参数
+                this.params.bubbleCount = Math.floor(Math.random() * 4900) + 100;
+                this.params.sizeDistribution = Math.random() * 1.4 + 0.1;
+                this.params.lifespan = Math.random() * 1.8 + 0.2;
+                this.params.flowIntensity = Math.random();
+                this.params.noiseScale = Math.random() * 0.029 + 0.001;
+                this.params.cohesion = Math.random();
+                this.params.collisionIterations = Math.floor(Math.random() * 9) + 1;
+                this.params.collisionStrength = Math.random() * 1.4 + 0.1;
+                this.params.detectionRadius = Math.floor(Math.random() * 180) + 20;
+                this.params.opacity = Math.random() * 0.7 + 0.3;
+                
+                // 更新UI控件
+                document.getElementById('bubbleCount').value = this.params.bubbleCount;
+                document.getElementById('bubbleCountValue').textContent = this.params.bubbleCount;
+                
+                document.getElementById('sizeDistribution').value = this.params.sizeDistribution;
+                document.getElementById('sizeDistributionValue').textContent = this.params.sizeDistribution.toFixed(1);
+                
+                document.getElementById('lifespan').value = this.params.lifespan;
+                document.getElementById('lifespanValue').textContent = this.params.lifespan.toFixed(1);
+                
+                document.getElementById('flowIntensity').value = this.params.flowIntensity;
+                document.getElementById('flowIntensityValue').textContent = this.params.flowIntensity.toFixed(1);
+                
+                document.getElementById('noiseScale').value = this.params.noiseScale;
+                document.getElementById('noiseScaleValue').textContent = this.params.noiseScale.toFixed(3);
+                
+                document.getElementById('cohesion').value = this.params.cohesion;
+                document.getElementById('cohesionValue').textContent = this.params.cohesion.toFixed(1);
+                
+                document.getElementById('collisionIterations').value = this.params.collisionIterations;
+                document.getElementById('collisionIterationsValue').textContent = this.params.collisionIterations;
+                
+                document.getElementById('collisionStrength').value = this.params.collisionStrength;
+                document.getElementById('collisionStrengthValue').textContent = this.params.collisionStrength.toFixed(1);
+                
+                document.getElementById('detectionRadius').value = this.params.detectionRadius;
+                document.getElementById('detectionRadiusValue').textContent = this.params.detectionRadius;
+                
+                document.getElementById('opacity').value = this.params.opacity;
+                document.getElementById('opacityValue').textContent = this.params.opacity.toFixed(1);
+                
+                // 更新流动场
+                this.flowField.intensity = this.params.flowIntensity;
+                this.flowField.scale = this.params.noiseScale;
+                
+                // 更新空间网格大小
+                this.spatialGrid.cellSize = Math.max(50, this.params.detectionRadius / 2);
+                
+                // 重新创建泡沫
+                this.createBubbles();
+            }
+            
+            // 切换性能模式
+            togglePerformanceMode() {
+                this.performanceMode = !this.performanceMode;
+                const btn = document.getElementById('performanceBtn');
+                
+                if (this.performanceMode) {
+                    // 性能模式：减少绘制细节
+                    btn.innerHTML = '<i class="fas fa-tachometer-alt"></i> 画质模式';
+                    btn.className = 'btn btn-primary';
+                } else {
+                    // 画质模式：恢复绘制细节
+                    btn.innerHTML = '<i class="fas fa-tachometer-alt"></i> 性能模式';
+                    btn.className = 'btn btn-warning';
+                }
+            }
+
+            // 避免粒子相交的迭代算法
+            resolveCollisions() {
+                const startTime = performance.now();
+                this.collisionsPerFrame = 0;
+                
+                // 更新空间网格
+                this.updateSpatialGrid();
+                
+                // 进行多次迭代（可调参数）
+                for (let iter = 0; iter < this.params.collisionIterations; iter++) {
+                    // 遍历所有粒子
+                    for (let i = 0; i < this.bubbles.length; i++) {
+                        const bubble = this.bubbles[i];
+                        
+                        // 重置碰撞计数
+                        bubble.collisionCount = 0;
+                        
+                        // 使用空间网格获取附近的粒子
+                        const nearbyBubbles = this.spatialGrid.getNearby(bubble, this.params.detectionRadius);
+                        
+                        // 检查与附近粒子的碰撞
+                        for (const other of nearbyBubbles) {
+                            // 计算距离
+                            const dx = other.x - bubble.x;
+                            const dy = other.y - bubble.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            // 最小允许距离（两粒子半径之和）
+                            const minDistance = bubble.radius + other.radius;
+                            
+                            // 如果距离小于最小允许距离，则处理碰撞
+                            if (distance > 0 && distance < minDistance) {
+                                this.collisionsPerFrame++;
+                                bubble.collisionCount++;
+                                
+                                // 计算重叠量
+                                const overlap = minDistance - distance;
+                                
+                                // 计算单位向量（从当前粒子指向其他粒子）
+                                const unitX = dx / distance;
+                                const unitY = dy / distance;
+                                
+                                // 根据碰撞强度参数移动粒子
+                                // 正值使粒子远离，负值使粒子靠近
+                                const moveDistance = overlap * this.params.collisionStrength * 0.5;
+                                
+                                // 移动当前粒子（使其远离其他粒子）
+                                bubble.x -= unitX * moveDistance;
+                                bubble.y -= unitY * moveDistance;
+                                
+                                // 也可以同时移动另一个粒子（可选，取消注释以下两行）
+                                // other.x += unitX * moveDistance * 0.5;
+                                // other.y += unitY * moveDistance * 0.5;
+                            }
+                        }
+                    }
+                }
+                
+                // 记录处理时间
+                this.processingTime = performance.now() - startTime;
+            }
+            
+            // 计算平均粒子间距
+            calculateAverageDistance() {
+                if (this.bubbles.length < 2) return 0;
+                
+                let totalDistance = 0;
+                let sampleCount = 0;
+                
+                // 随机采样部分粒子对
+                const sampleSize = Math.min(100, this.bubbles.length);
+                
+                for (let i = 0; i < sampleSize; i++) {
+                    const bubble1 = this.bubbles[Math.floor(Math.random() * this.bubbles.length)];
+                    
+                    // 找到最近的粒子
+                    let minDistance = Infinity;
+                    
+                    // 使用空间网格提高性能
+                    const nearbyBubbles = this.spatialGrid.getNearby(bubble1, this.params.detectionRadius);
+                    
+                    for (const bubble2 of nearbyBubbles) {
+                        if (bubble1 === bubble2) continue;
+                        
+                        const distance = Math.sqrt(
+                            Math.pow(bubble1.x - bubble2.x, 2) + 
+                            Math.pow(bubble1.y - bubble2.y, 2)
+                        );
+                        
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                        }
+                    }
+                    
+                    if (minDistance < Infinity) {
+                        totalDistance += minDistance;
+                        sampleCount++;
+                    }
+                }
+                
+                return sampleCount > 0 ? Math.round(totalDistance / sampleCount) : 0;
+            }
+
+            // 更新泡沫
+            update(deltaTime) {
+                // 应用避免相交算法
+                this.resolveCollisions();
+                
+                // 更新每个泡沫
+                for (let i = this.bubbles.length - 1; i >= 0; i--) {
+                    const bubble = this.bubbles[i];
+                    
+                    // 如果泡沫已破裂并消失
+                    if (!bubble.update(deltaTime, this.flowField, this.params.cohesion)) {
+                        // 移除破裂的泡沫
+                        this.bubbles.splice(i, 1);
+                        this.burstBubbles++;
+                        
+                        // 当泡沫破裂时，其他泡沫会靠拢（内聚性增加）
+                        if (this.params.cohesion < 0.9) {
+                            this.params.cohesion += 0.01;
+                            document.getElementById('cohesion').value = this.params.cohesion;
+                            document.getElementById('cohesionValue').textContent = this.params.cohesion.toFixed(1);
+                        }
+                    }
+                }
+                
+                // 添加新泡沫以保持总数
+                while (this.bubbles.length < this.params.bubbleCount) {
+                    this.addNewBubble();
+                    this.activeBubbles++;
+                }
+                
+                // 计算平均间距
+                this.avgDistance = this.calculateAverageDistance();
+                
+                // 更新统计信息
+                this.activeBubbles = this.bubbles.length;
+                document.getElementById('activeBubbles').textContent = this.activeBubbles;
+                document.getElementById('burstBubbles').textContent = this.burstBubbles;
+                document.getElementById('collisions').textContent = this.collisionsPerFrame;
+                document.getElementById('avgDistance').textContent = this.avgDistance;
+                document.getElementById('processingTime').textContent = this.processingTime.toFixed(1);
+                
+                // 累计总碰撞数
+                this.totalCollisions += this.collisionsPerFrame;
+            }
+
+            // 添加新泡沫
+            addNewBubble() {
+                // 从边缘随机位置添加新泡沫
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
+                
+                if (side === 0) { // 顶部
+                    x = Math.random() * canvas.width;
+                    y = -10;
+                } else if (side === 1) { // 右侧
+                    x = canvas.width + 10;
+                    y = Math.random() * canvas.height;
+                } else if (side === 2) { // 底部
+                    x = Math.random() * canvas.width;
+                    y = canvas.height + 10;
+                } else { // 左侧
+                    x = -10;
+                    y = Math.random() * canvas.height;
+                }
+                
+                // 使用相同的大小分布创建新泡沫
+                const sizeFactor = Math.pow(Math.random(), this.params.sizeDistribution);
+                let radius;
+                if (sizeFactor < 0.7) {
+                    radius = 3 + sizeFactor * 7;
+                } else if (sizeFactor < 0.95) {
+                    radius = 10 + (sizeFactor - 0.7) * 15;
+                } else {
+                    radius = 20 + (sizeFactor - 0.95) * 25;
+                }
+                
+                // 泡沫颜色
+                let color;
+                if (radius < 8) {
+                    color = `rgba(179, 229, 252, ${this.params.opacity})`;
+                } else if (radius < 18) {
+                    color = `rgba(129, 212, 250, ${this.params.opacity})`;
+                } else {
+                    color = `rgba(41, 182, 246, ${this.params.opacity})`;
+                }
+                
+                // 创建新泡沫
+                const lifespan = this.params.lifespan * (1 + Math.random()) * (30 / radius);
+                this.bubbles.push(new Bubble(x, y, radius, lifespan, color));
+            }
+
+            // 绘制所有泡沫
+            draw() {
+                // 清空画布
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制背景渐变
+                const bgGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                bgGradient.addColorStop(0, 'rgba(129, 212, 250, 0.2)');
+                bgGradient.addColorStop(1, 'rgba(179, 229, 252, 0.1)');
+                ctx.fillStyle = bgGradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // 性能模式：简化绘制
+                if (this.performanceMode) {
+                    // 简化绘制：只绘制泡沫主体，省略高光和边框
+                    for (const bubble of this.bubbles) {
+                        ctx.beginPath();
+                        ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = bubble.color.replace('0.7', bubble.opacity.toString());
+                        ctx.fill();
+                    }
+                } else {
+                    // 画质模式：完整绘制
+                    for (const bubble of this.bubbles) {
+                        bubble.draw();
+                    }
+                }
+                
+                // 可选：绘制碰撞检测半径（调试用）
+                // this.drawDebugInfo();
+            }
+            
+            // 绘制调试信息
+            drawDebugInfo() {
+                if (this.bubbles.length > 0) {
+                    // 绘制第一个粒子的检测半径
+                    const bubble = this.bubbles[0];
+                    ctx.beginPath();
+                    ctx.arc(bubble.x, bubble.y, this.params.detectionRadius, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.2)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    // 显示碰撞计数
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                    ctx.font = '14px Arial';
+                    ctx.fillText(`碰撞: ${bubble.collisionCount}`, bubble.x + 20, bubble.y);
+                }
+            }
+
+            // 动画循环
+            animate(currentTime) {
+                // 计算时间增量
+                const deltaTime = currentTime - this.lastTime || 0;
+                this.lastTime = currentTime;
+                
+                // 计算FPS
+                this.calculateFPS(currentTime);
+                
+                // 更新和绘制
+                this.update(deltaTime / 16); // 标准化时间增量
+                this.draw();
+                
+                // 继续动画循环
+                requestAnimationFrame(this.animate.bind(this));
+            }
+
+            // 计算FPS
+            calculateFPS(currentTime) {
+                this.fpsFrameCount++;
+                
+                if (currentTime - this.fpsLastTime >= 1000) {
+                    this.fps = Math.round((this.fpsFrameCount * 1000) / (currentTime - this.fpsLastTime));
+                    this.fpsFrameCount = 0;
+                    this.fpsLastTime = currentTime;
+                    
+                    // 更新FPS显示
+                    document.getElementById('fpsCounter').textContent = this.fps;
+                }
+            }
+        }
+
+        // 初始化增强版泡沫模拟器
+        const simulator = new EnhancedBubbleSimulator();
+    </script>
+</body>
+</html>
