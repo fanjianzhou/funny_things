@@ -1,0 +1,2098 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神经网络三角避障 - 动态地图与主题</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0c0c1d 0%, #121230 100%);
+            color: #e0e0ff;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(10, 15, 40, 0.7);
+            border-radius: 15px;
+            border: 1px solid #2a2a5a;
+            box-shadow: 0 0 25px rgba(0, 150, 255, 0.2);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            background: linear-gradient(90deg, #00f7ff, #0080ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a0a0ff;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+        }
+        
+        .game-area {
+            flex: 1;
+            min-width: 700px;
+            background: rgba(5, 10, 30, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid #2a2a5a;
+            box-shadow: 0 0 20px rgba(0, 100, 255, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .game-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00aaff, transparent);
+        }
+        
+        .control-panel {
+            flex: 0 0 400px;
+            background: rgba(10, 15, 40, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #2a2a5a;
+            box-shadow: 0 0 20px rgba(0, 100, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .panel-title {
+            font-size: 1.5rem;
+            color: #00ccff;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .panel-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #00ccff;
+            border-radius: 2px;
+        }
+        
+        canvas {
+            display: block;
+            background: rgba(0, 5, 20, 0.9);
+            border-radius: 10px;
+            border: 1px solid #333355;
+            margin: 0 auto;
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #0055aa 0%, #003377 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 120px;
+            border: 1px solid #335588;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        
+        button:hover {
+            background: linear-gradient(135deg, #0077cc 0%, #0055aa 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 100, 255, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .primary-btn {
+            background: linear-gradient(135deg, #00aaff 0%, #0066cc 100%);
+            border: 1px solid #44aaff;
+        }
+        
+        .danger-btn {
+            background: linear-gradient(135deg, #ff3366 0%, #cc0033 100%);
+            border: 1px solid #ff6688;
+        }
+        
+        .success-btn {
+            background: linear-gradient(135deg, #00cc88 0%, #008855 100%);
+            border: 1px solid #44dd99;
+        }
+        
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .slider-value {
+            color: #00ccff;
+            font-weight: bold;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            background: #223355;
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #00aaff;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .status-display {
+            background: rgba(0, 20, 40, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #2a4a6a;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #334455;
+        }
+        
+        .status-item:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .status-label {
+            color: #a0c0ff;
+        }
+        
+        .status-value {
+            color: #00ffcc;
+            font-weight: bold;
+        }
+        
+        .neural-viz {
+            background: rgba(0, 10, 30, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #2a4a6a;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .export-import {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        textarea {
+            background: rgba(0, 15, 30, 0.8);
+            border: 1px solid #335577;
+            border-radius: 8px;
+            padding: 12px;
+            color: #ccddff;
+            font-family: 'Courier New', monospace;
+            height: 120px;
+            resize: vertical;
+        }
+        
+        .scene-mode {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .mode-selector {
+            display: flex;
+            background: rgba(0, 15, 30, 0.8);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #335577;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            background: transparent;
+            border-radius: 0;
+            border: none;
+            min-width: auto;
+        }
+        
+        .mode-btn.active {
+            background: rgba(0, 100, 255, 0.3);
+            border-bottom: 2px solid #00aaff;
+        }
+        
+        .theme-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .theme-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .theme-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+        
+        .theme-btn.active {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px currentColor;
+        }
+        
+        .individual-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 4px 8px;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 10;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #335577;
+            font-size: 14px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #7788aa;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+        
+        .debug-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #ff9900;
+            font-family: 'Courier New', monospace;
+            max-width: 200px;
+        }
+        
+        .training-stats {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #00ffcc;
+            font-family: 'Courier New', monospace;
+            max-width: 250px;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .game-area, .control-panel {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>神经网络三角避障 - 动态地图与主题</h1>
+            <p class="subtitle">随机模式每代重置地图测试泛化能力，新增多种颜色主题选择。</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="game-area">
+                <canvas id="gameCanvas" width="800" height="600"></canvas>
+                <div class="individual-info" id="individualInfo">个体 #0: 旋转: 0.00, 移动: 0.00</div>
+                <div class="debug-info" id="debugInfo">前进奖励: 0.0 | 方向对齐: 0.0</div>
+                <div class="training-stats" id="trainingStats">平均移动: 0.00 | 前进比例: 0%</div>
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-color" id="legendAgent"></div>三角形智能体</div>
+                    <div class="legend-item"><div class="legend-color" id="legendObstacle"></div>圆形障碍物</div>
+                    <div class="legend-item"><div class="legend-color" id="legendGoal"></div>终点</div>
+                    <div class="legend-item"><div class="legend-color" id="legendSensor"></div>传感器视线</div>
+                    <div class="legend-item"><div class="legend-color" id="legendBest"></div>最佳个体</div>
+                </div>
+            </div>
+            
+            <div class="control-panel">
+                <div>
+                    <div class="panel-title">训练控制</div>
+                    <div class="button-group">
+                        <button id="startBtn" class="primary-btn">开始训练</button>
+                        <button id="pauseBtn">暂停训练</button>
+                        <button id="resetBtn" class="danger-btn">重置训练</button>
+                        <button id="stepBtn">单步训练</button>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="panel-title">颜色主题</div>
+                    <div class="theme-selector">
+                        <div class="theme-buttons">
+                            <button id="themeCyber" class="theme-btn active" style="background: linear-gradient(135deg, #0055aa 0%, #003377 100%); color: #a0e0ff;">科技蓝</button>
+                            <button id="themeNeon" class="theme-btn" style="background: linear-gradient(135deg, #7700aa 0%, #440077 100%); color: #e0a0ff;">霓虹紫</button>
+                            <button id="themeFire" class="theme-btn" style="background: linear-gradient(135deg, #aa5500 0%, #773300 100%); color: #ffc0a0;">火焰橙</button>
+                            <button id="themeForest" class="theme-btn" style="background: linear-gradient(135deg, #005500 0%, #003300 100%); color: #a0ffc0;">森林绿</button>
+                            <button id="themeIce" class="theme-btn" style="background: linear-gradient(135deg, #0088aa 0%, #005577 100%); color: #a0ffff;">冰霜白</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="panel-title">训练参数</div>
+                    <div class="controls">
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>种群大小:</span>
+                                <span class="slider-value" id="populationValue">50</span>
+                            </div>
+                            <input type="range" id="populationSlider" min="10" max="200" step="10" value="50">
+                        </div>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>移动惩罚系数:</span>
+                                <span class="slider-value" id="penaltyValue">0.05</span>
+                            </div>
+                            <input type="range" id="penaltySlider" min="0" max="0.2" step="0.01" value="0.05">
+                        </div>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>前进奖励系数:</span>
+                                <span class="slider-value" id="forwardRewardValue">0.02</span>
+                            </div>
+                            <input type="range" id="forwardRewardSlider" min="0" max="0.1" step="0.005" value="0.02">
+                        </div>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>方向对齐奖励:</span>
+                                <span class="slider-value" id="alignmentRewardValue">0.01</span>
+                            </div>
+                            <input type="range" id="alignmentRewardSlider" min="0" max="0.05" step="0.002" value="0.01">
+                        </div>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>变异率:</span>
+                                <span class="slider-value" id="mutationValue">0.1</span>
+                            </div>
+                            <input type="range" id="mutationSlider" min="0" max="0.5" step="0.01" value="0.1">
+                        </div>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>最大步数 (超时):</span>
+                                <span class="slider-value" id="maxStepsValue">500</span>
+                            </div>
+                            <input type="range" id="maxStepsSlider" min="100" max="1000" step="50" value="500">
+                        </div>
+                        
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="timeoutPenaltyCheckbox" checked>
+                            <label for="timeoutPenaltyCheckbox">启用超时惩罚</label>
+                        </div>
+                        
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="boundaryDetectionCheckbox" checked>
+                            <label for="boundaryDetectionCheckbox">启用边界检测</label>
+                        </div>
+                        
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="directionPreferenceCheckbox" checked>
+                            <label for="directionPreferenceCheckbox">启用前进方向偏好</label>
+                        </div>
+                        
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="randomizeEachGenCheckbox" checked>
+                            <label for="randomizeEachGenCheckbox">每代重置随机地图</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="panel-title">场景模式</div>
+                    <div class="scene-mode">
+                        <div class="mode-selector">
+                            <button id="fixedModeBtn" class="mode-btn active">固定模式</button>
+                            <button id="randomModeBtn" class="mode-btn">随机模式</button>
+                        </div>
+                        <p style="font-size: 0.9rem; color: #a0c0ff;">随机模式测试网络的泛化能力，每次重置会随机生成障碍物和终点位置。</p>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="panel-title">神经网络可视化</div>
+                    <div class="neural-viz">
+                        <canvas id="neuralCanvas" width="350" height="180"></canvas>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="panel-title">训练状态</div>
+                    <div class="status-display">
+                        <div class="status-item">
+                            <span class="status-label">当前世代:</span>
+                            <span class="status-value" id="generationValue">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">最佳适应度:</span>
+                            <span class="status-value" id="bestFitnessValue">0.00</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">平均适应度:</span>
+                            <span class="status-value" id="avgFitnessValue">0.00</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">存活个体:</span>
+                            <span class="status-value" id="aliveCountValue">0/50</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">成功到达:</span>
+                            <span class="status-value" id="successCountValue">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">超时死亡:</span>
+                                <span class="status-value" id="timeoutCountValue">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">平均移动速度:</span>
+                            <span class="status-value" id="avgSpeedValue">0.00</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">地图变化:</span>
+                            <span class="status-value" id="mapChangeValue">固定</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="panel-title">权重导入/导出</div>
+                    <div class="export-import">
+                        <textarea id="weightsTextarea" placeholder="在此粘贴JSON格式的神经网络权重..."></textarea>
+                        <div class="button-group">
+                            <button id="exportBtn">导出最佳权重</button>
+                            <button id="importBtn" class="success-btn">导入权重</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>改进: 1) 随机模式每代重置地图 2) 五种颜色主题 3) 前进奖励与方向对齐 4) 神经网络输出优化</p>
+        </div>
+    </div>
+
+    <script>
+        // 游戏主逻辑
+        const gameCanvas = document.getElementById('gameCanvas');
+        const neuralCanvas = document.getElementById('neuralCanvas');
+        const ctx = gameCanvas.getContext('2d');
+        const neuralCtx = neuralCanvas.getContext('2d');
+        
+        // 控制元素
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const stepBtn = document.getElementById('stepBtn');
+        const populationSlider = document.getElementById('populationSlider');
+        const penaltySlider = document.getElementById('penaltySlider');
+        const forwardRewardSlider = document.getElementById('forwardRewardSlider');
+        const alignmentRewardSlider = document.getElementById('alignmentRewardSlider');
+        const mutationSlider = document.getElementById('mutationSlider');
+        const maxStepsSlider = document.getElementById('maxStepsSlider');
+        const timeoutPenaltyCheckbox = document.getElementById('timeoutPenaltyCheckbox');
+        const boundaryDetectionCheckbox = document.getElementById('boundaryDetectionCheckbox');
+        const directionPreferenceCheckbox = document.getElementById('directionPreferenceCheckbox');
+        const randomizeEachGenCheckbox = document.getElementById('randomizeEachGenCheckbox');
+        
+        // 主题按钮
+        const themeCyber = document.getElementById('themeCyber');
+        const themeNeon = document.getElementById('themeNeon');
+        const themeFire = document.getElementById('themeFire');
+        const themeForest = document.getElementById('themeForest');
+        const themeIce = document.getElementById('themeIce');
+        
+        const populationValue = document.getElementById('populationValue');
+        const penaltyValue = document.getElementById('penaltyValue');
+        const forwardRewardValue = document.getElementById('forwardRewardValue');
+        const alignmentRewardValue = document.getElementById('alignmentRewardValue');
+        const mutationValue = document.getElementById('mutationValue');
+        const maxStepsValue = document.getElementById('maxStepsValue');
+        const fixedModeBtn = document.getElementById('fixedModeBtn');
+        const randomModeBtn = document.getElementById('randomModeBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const importBtn = document.getElementById('importBtn');
+        const weightsTextarea = document.getElementById('weightsTextarea');
+        const individualInfo = document.getElementById('individualInfo');
+        const debugInfo = document.getElementById('debugInfo');
+        const trainingStats = document.getElementById('trainingStats');
+        
+        // 状态显示元素
+        const generationValue = document.getElementById('generationValue');
+        const bestFitnessValue = document.getElementById('bestFitnessValue');
+        const avgFitnessValue = document.getElementById('avgFitnessValue');
+        const aliveCountValue = document.getElementById('aliveCountValue');
+        const successCountValue = document.getElementById('successCountValue');
+        const timeoutCountValue = document.getElementById('timeoutCountValue');
+        const avgSpeedValue = document.getElementById('avgSpeedValue');
+        const mapChangeValue = document.getElementById('mapChangeValue');
+        
+        // 图例颜色元素
+        const legendAgent = document.getElementById('legendAgent');
+        const legendObstacle = document.getElementById('legendObstacle');
+        const legendGoal = document.getElementById('legendGoal');
+        const legendSensor = document.getElementById('legendSensor');
+        const legendBest = document.getElementById('legendBest');
+        
+        // 游戏配置
+        let config = {
+            populationSize: 50,
+            mutationRate: 0.1,
+            movePenalty: 0.05,
+            forwardReward: 0.02,
+            alignmentReward: 0.01,
+            maxSteps: 500,
+            timeoutPenaltyEnabled: true,
+            boundaryDetectionEnabled: true,
+            directionPreferenceEnabled: true,
+            randomizeEachGen: true, // 新增：每代重置随机地图
+            sceneMode: 'fixed',
+            training: false,
+            generation: 0,
+            bestFitness: 0,
+            avgFitness: 0,
+            aliveCount: 0,
+            successCount: 0,
+            timeoutCount: 0,
+            avgSpeed: 0,
+            forwardRatio: 0,
+            selectedIndividual: 0,
+            debugMode: false,
+            theme: 'cyber' // 新增：当前主题
+        };
+        
+        // 主题配置
+        const themes = {
+            cyber: {
+                name: '科技蓝',
+                agentColor: '#00aaff',
+                bestAgentColor: '#ff00ff',
+                obstacleColor: '#ff3366',
+                goalColor: '#00ff88',
+                sensorColor: '#ffff00',
+                backgroundColor: 'rgba(0, 5, 20, 0.9)',
+                gridColor: 'rgba(0, 100, 255, 0.1)',
+                boundaryColor: 'rgba(255, 153, 0, 0.3)',
+                trailColor: 'rgba(0, 170, 255, 0.3)',
+                successTrailColor: 'rgba(0, 255, 136, 0.3)',
+                timeoutColor: '#ff9900'
+            },
+            neon: {
+                name: '霓虹紫',
+                agentColor: '#cc00ff',
+                bestAgentColor: '#ffff00',
+                obstacleColor: '#00ffcc',
+                goalColor: '#ff00aa',
+                sensorColor: '#ff7700',
+                backgroundColor: 'rgba(10, 0, 20, 0.9)',
+                gridColor: 'rgba(180, 0, 255, 0.1)',
+                boundaryColor: 'rgba(0, 255, 200, 0.3)',
+                trailColor: 'rgba(200, 0, 255, 0.3)',
+                successTrailColor: 'rgba(255, 0, 170, 0.3)',
+                timeoutColor: '#ff9900'
+            },
+            fire: {
+                name: '火焰橙',
+                agentColor: '#ff8800',
+                bestAgentColor: '#ffff00',
+                obstacleColor: '#ff0033',
+                goalColor: '#00ff00',
+                sensorColor: '#ffcc00',
+                backgroundColor: 'rgba(20, 5, 0, 0.9)',
+                gridColor: 'rgba(255, 80, 0, 0.1)',
+                boundaryColor: 'rgba(255, 200, 0, 0.3)',
+                trailColor: 'rgba(255, 136, 0, 0.3)',
+                successTrailColor: 'rgba(0, 255, 0, 0.3)',
+                timeoutColor: '#ff3333'
+            },
+            forest: {
+                name: '森林绿',
+                agentColor: '#00cc44',
+                bestAgentColor: '#ffff00',
+                obstacleColor: '#cc6600',
+                goalColor: '#00aaff',
+                sensorColor: '#ffff00',
+                backgroundColor: 'rgba(0, 10, 5, 0.9)',
+                gridColor: 'rgba(0, 180, 60, 0.1)',
+                boundaryColor: 'rgba(255, 200, 0, 0.3)',
+                trailColor: 'rgba(0, 204, 68, 0.3)',
+                successTrailColor: 'rgba(0, 170, 255, 0.3)',
+                timeoutColor: '#cc3300'
+            },
+            ice: {
+                name: '冰霜白',
+                agentColor: '#aaddff',
+                bestAgentColor: '#ff99ff',
+                obstacleColor: '#ff6666',
+                goalColor: '#99ff99',
+                sensorColor: '#ffff99',
+                backgroundColor: 'rgba(5, 15, 25, 0.9)',
+                gridColor: 'rgba(150, 220, 255, 0.1)',
+                boundaryColor: 'rgba(255, 255, 200, 0.3)',
+                trailColor: 'rgba(170, 221, 255, 0.3)',
+                successTrailColor: 'rgba(153, 255, 153, 0.3)',
+                timeoutColor: '#ff9966'
+            }
+        };
+        
+        // 当前主题
+        let currentTheme = themes.cyber;
+        
+        // 更新主题
+        function updateTheme(themeName) {
+            config.theme = themeName;
+            currentTheme = themes[themeName];
+            
+            // 更新图例颜色
+            legendAgent.style.background = currentTheme.agentColor;
+            legendObstacle.style.background = currentTheme.obstacleColor;
+            legendGoal.style.background = currentTheme.goalColor;
+            legendSensor.style.background = currentTheme.sensorColor;
+            legendBest.style.background = currentTheme.bestAgentColor;
+            
+            // 更新按钮激活状态
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`theme${themeName.charAt(0).toUpperCase() + themeName.slice(1)}`).classList.add('active');
+            
+            // 如果游戏已初始化，重新绘制
+            if (game) {
+                game.draw();
+            }
+        }
+        
+        // 改进的神经网络类
+        class NeuralNetwork {
+            constructor(inputNodes, hiddenNodes1, hiddenNodes2, outputNodes) {
+                this.inputNodes = inputNodes;
+                this.hiddenNodes1 = hiddenNodes1;
+                this.hiddenNodes2 = hiddenNodes2;
+                this.outputNodes = outputNodes;
+                
+                // 使用Xavier初始化
+                this.weights_ih1 = this.xavierMatrix(hiddenNodes1, inputNodes);
+                this.weights_h1h2 = this.xavierMatrix(hiddenNodes2, hiddenNodes1);
+                this.weights_h2o = this.xavierMatrix(outputNodes, hiddenNodes2);
+                
+                this.bias_h1 = this.randomMatrix(hiddenNodes1, 1, 0.1);
+                this.bias_h2 = this.randomMatrix(hiddenNodes2, 1, 0.1);
+                this.bias_o = this.randomMatrix(outputNodes, 1, 0.1);
+            }
+            
+            // Xavier初始化
+            xavierMatrix(rows, cols) {
+                const scale = Math.sqrt(2.0 / (rows + cols));
+                return Array.from({length: rows}, () => 
+                    Array.from({length: cols}, () => (Math.random() * 2 - 1) * scale)
+                );
+            }
+            
+            // 生成随机矩阵
+            randomMatrix(rows, cols, scale = 1.0) {
+                return Array.from({length: rows}, () => 
+                    Array.from({length: cols}, () => (Math.random() * 2 - 1) * scale)
+                );
+            }
+            
+            // 矩阵乘法
+            multiplyMatrix(a, b) {
+                const rowsA = a.length, colsA = a[0].length;
+                const rowsB = b.length, colsB = b[0].length;
+                
+                if (colsA !== rowsB) {
+                    console.error("矩阵维度不匹配");
+                    return null;
+                }
+                
+                const result = Array.from({length: rowsA}, () => Array(colsB).fill(0));
+                
+                for (let i = 0; i < rowsA; i++) {
+                    for (let j = 0; j < colsB; j++) {
+                        let sum = 0;
+                        for (let k = 0; k < colsA; k++) {
+                            sum += a[i][k] * b[k][j];
+                        }
+                        result[i][j] = sum;
+                    }
+                }
+                
+                return result;
+            }
+            
+            // 添加偏置
+            addBias(matrix, bias) {
+                return matrix.map((row, i) => 
+                    row.map((val, j) => val + bias[i][0])
+                );
+            }
+            
+            // 激活函数 (ReLU，隐藏层用)
+            relu(x) {
+                return Math.max(0, x);
+            }
+            
+            // 激活函数 (tanh，输出范围[-1, 1])
+            tanh(x) {
+                return Math.tanh(x);
+            }
+            
+            // 激活函数 (sigmoid，输出范围[0, 1])
+            sigmoid(x) {
+                return 1 / (1 + Math.exp(-x));
+            }
+            
+            // 激活函数应用于矩阵
+            activateMatrix(matrix, activation = 'relu') {
+                return matrix.map(row => 
+                    row.map(val => {
+                        if (activation === 'relu') return this.relu(val);
+                        if (activation === 'tanh') return this.tanh(val);
+                        if (activation === 'sigmoid') return this.sigmoid(val);
+                        return val;
+                    })
+                );
+            }
+            
+            // 前向传播
+            predict(inputArray) {
+                // 转换输入为矩阵
+                const inputs = inputArray.map(val => [val]);
+                
+                // 输入层到隐藏层1 - 使用ReLU
+                let hidden1 = this.multiplyMatrix(this.weights_ih1, inputs);
+                hidden1 = this.addBias(hidden1, this.bias_h1);
+                hidden1 = this.activateMatrix(hidden1, 'relu');
+                
+                // 隐藏层1到隐藏层2 - 使用ReLU
+                let hidden2 = this.multiplyMatrix(this.weights_h1h2, hidden1);
+                hidden2 = this.addBias(hidden2, this.bias_h2);
+                hidden2 = this.activateMatrix(hidden2, 'relu');
+                
+                // 隐藏层2到输出层
+                let outputs = this.multiplyMatrix(this.weights_h2o, hidden2);
+                outputs = this.addBias(outputs, this.bias_o);
+                
+                // 输出层使用不同的激活函数：
+                // outputs[0] - 旋转值: tanh (范围[-1, 1])
+                // outputs[1] - 移动值: sigmoid (范围[0, 1])，然后映射到[-1, 1]或[0, 2]根据方向偏好
+                let rotatedOutput = outputs[0][0];
+                let moveOutput = outputs[1][0];
+                
+                // 应用激活函数
+                const rotation = this.tanh(rotatedOutput); // 旋转值：-1到1
+                
+                // 移动值：根据方向偏好设置
+                let movement;
+                if (config.directionPreferenceEnabled) {
+                    // 使用sigmoid，然后映射到[0, 2]，这样正方向移动的奖励更大
+                    movement = this.sigmoid(moveOutput) * 2 - 0.5; // 范围[-0.5, 1.5]，但大部分值在[0, 1.5]
+                } else {
+                    // 没有方向偏好，使用tanh
+                    movement = this.tanh(moveOutput); // 范围[-1, 1]
+                }
+                
+                return [rotation, movement];
+            }
+            
+            // 复制神经网络
+            copy() {
+                const nn = new NeuralNetwork(
+                    this.inputNodes, 
+                    this.hiddenNodes1, 
+                    this.hiddenNodes2, 
+                    this.outputNodes
+                );
+                
+                nn.weights_ih1 = this.copyMatrix(this.weights_ih1);
+                nn.weights_h1h2 = this.copyMatrix(this.weights_h1h2);
+                nn.weights_h2o = this.copyMatrix(this.weights_h2o);
+                nn.bias_h1 = this.copyMatrix(this.bias_h1);
+                nn.bias_h2 = this.copyMatrix(this.bias_h2);
+                nn.bias_o = this.copyMatrix(this.bias_o);
+                
+                return nn;
+            }
+            
+            // 复制矩阵
+            copyMatrix(matrix) {
+                return matrix.map(row => [...row]);
+            }
+            
+            // 突变
+            mutate(rate) {
+                const mutateValue = (val) => {
+                    if (Math.random() < rate) {
+                        // 高斯突变，但限制变化范围
+                        return val + (Math.random() * 2 - 1) * 0.3;
+                    }
+                    return val;
+                };
+                
+                this.weights_ih1 = this.weights_ih1.map(row => row.map(mutateValue));
+                this.weights_h1h2 = this.weights_h1h2.map(row => row.map(mutateValue));
+                this.weights_h2o = this.weights_h2o.map(row => row.map(mutateValue));
+                this.bias_h1 = this.bias_h1.map(row => row.map(mutateValue));
+                this.bias_h2 = this.bias_h2.map(row => row.map(mutateValue));
+                this.bias_o = this.bias_o.map(row => row.map(mutateValue));
+            }
+            
+            // 导出权重为JSON
+            exportWeights() {
+                return {
+                    weights_ih1: this.weights_ih1,
+                    weights_h1h2: this.weights_h1h2,
+                    weights_h2o: this.weights_h2o,
+                    bias_h1: this.bias_h1,
+                    bias_h2: this.bias_h2,
+                    bias_o: this.bias_o,
+                    metadata: {
+                        inputNodes: this.inputNodes,
+                        hiddenNodes1: this.hiddenNodes1,
+                        hiddenNodes2: this.hiddenNodes2,
+                        outputNodes: this.outputNodes,
+                        activation: 'relu/tanh/sigmoid'
+                    }
+                };
+            }
+            
+            // 从JSON导入权重
+            importWeights(data) {
+                if (data.metadata) {
+                    console.log(`导入神经网络: ${data.metadata.inputNodes}-${data.metadata.hiddenNodes1}-${data.metadata.hiddenNodes2}-${data.metadata.outputNodes}`);
+                }
+                
+                this.weights_ih1 = data.weights_ih1;
+                this.weights_h1h2 = data.weights_h1h2;
+                this.weights_h2o = data.weights_h2o;
+                this.bias_h1 = data.bias_h1;
+                this.bias_h2 = data.bias_h2;
+                this.bias_o = data.bias_o;
+            }
+        }
+        
+        // 三角形个体类
+        class Triangle {
+            constructor(x, y, brain = null) {
+                this.x = x;
+                this.y = y;
+                this.angle = Math.random() * Math.PI * 2; // 随机初始角度
+                this.rotation = 0; // 旋转速度
+                this.speed = 0; // 移动速度
+                this.size = 15;
+                this.color = currentTheme.agentColor;
+                this.alive = true;
+                this.fitness = 0;
+                this.distanceToGoal = 0;
+                this.sensorDistance = 0;
+                this.steps = 0;
+                this.reachedGoal = false;
+                this.timedOut = false;
+                this.id = Math.floor(Math.random() * 10000);
+                
+                // 前进奖励和方向对齐奖励
+                this.forwardRewardAccumulated = 0;
+                this.alignmentRewardAccumulated = 0;
+                
+                // 神经网络
+                this.brain = brain || new NeuralNetwork(3, 8, 8, 2);
+                
+                // 显示信息
+                this.infoText = `旋转: 0.00, 移动: 0.00`;
+                
+                // 记录历史位置
+                this.trail = [];
+                this.maxTrailLength = 50;
+            }
+            
+            // 计算到目标的角度差（归一化到[-1, 1]）
+            calculateAngleToGoal(goal) {
+                const dx = goal.x - this.x;
+                const dy = goal.y - this.y;
+                const angleToGoal = Math.atan2(dy, dx);
+                
+                // 计算角度差，确保在[-π, π]范围内
+                let angleDiff = angleToGoal - this.angle;
+                while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+                while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+                
+                // 归一化到[-1, 1]
+                return angleDiff / Math.PI;
+            }
+            
+            // 更新位置
+            update(obstacles, goal) {
+                if (!this.alive || this.reachedGoal) return;
+                
+                this.steps++;
+                
+                // 添加位置到轨迹
+                this.trail.push({x: this.x, y: this.y});
+                if (this.trail.length > this.maxTrailLength) {
+                    this.trail.shift();
+                }
+                
+                // 超时检查
+                if (config.timeoutPenaltyEnabled && this.steps > config.maxSteps) {
+                    this.alive = false;
+                    this.timedOut = true;
+                    this.fitness -= 20; // 超时惩罚
+                    return;
+                }
+                
+                // 计算传感器距离（前方障碍物距离）
+                const sensorLength = 200;
+                const sensorEndX = this.x + Math.cos(this.angle) * sensorLength;
+                const sensorEndY = this.y + Math.sin(this.angle) * sensorLength;
+                
+                let closestDistance = sensorLength;
+                
+                // 检查与障碍物的碰撞
+                for (const obstacle of obstacles) {
+                    // 计算传感器与障碍物的交点
+                    const intersection = this.lineCircleIntersection(
+                        this.x, this.y, sensorEndX, sensorEndY,
+                        obstacle.x, obstacle.y, obstacle.radius
+                    );
+                    
+                    if (intersection.hit) {
+                        const dist = Math.sqrt(
+                            (intersection.x - this.x) ** 2 + 
+                            (intersection.y - this.y) ** 2
+                        );
+                        closestDistance = Math.min(closestDistance, dist);
+                    }
+                    
+                    // 检查三角形本身是否与障碍物碰撞
+                    const distToObstacle = Math.sqrt(
+                        (this.x - obstacle.x) ** 2 + (this.y - obstacle.y) ** 2
+                    );
+                    
+                    if (distToObstacle < obstacle.radius + this.size / 2) {
+                        this.alive = false;
+                        this.fitness -= 10; // 碰撞惩罚
+                    }
+                }
+                
+                // 边界检测
+                if (config.boundaryDetectionEnabled) {
+                    // 检测与四条边界的交点
+                    const boundaries = [
+                        {x1: 0, y1: 0, x2: gameCanvas.width, y2: 0}, // 上边界
+                        {x1: gameCanvas.width, y1: 0, x2: gameCanvas.width, y2: gameCanvas.height}, // 右边界
+                        {x1: 0, y1: gameCanvas.height, x2: gameCanvas.width, y2: gameCanvas.height}, // 下边界
+                        {x1: 0, y1: 0, x2: 0, y2: gameCanvas.height} // 左边界
+                    ];
+                    
+                    for (const boundary of boundaries) {
+                        const intersection = this.lineLineIntersection(
+                            this.x, this.y, sensorEndX, sensorEndY,
+                            boundary.x1, boundary.y1, boundary.x2, boundary.y2
+                        );
+                        
+                        if (intersection.hit) {
+                            const dist = Math.sqrt(
+                                (intersection.x - this.x) ** 2 + 
+                                (intersection.y - this.y) ** 2
+                            );
+                            closestDistance = Math.min(closestDistance, dist);
+                        }
+                    }
+                }
+                
+                this.sensorDistance = closestDistance;
+                
+                // 计算到终点的距离
+                this.distanceToGoal = Math.sqrt(
+                    (this.x - goal.x) ** 2 + (this.y - goal.y) ** 2
+                );
+                
+                // 检查是否到达终点
+                if (this.distanceToGoal < goal.radius) {
+                    this.reachedGoal = true;
+                    this.alive = false;
+                    this.fitness += 100; // 到达奖励
+                    // 额外奖励：更快的到达获得更多奖励
+                    this.fitness += (config.maxSteps - this.steps) * 0.1;
+                    return;
+                }
+                
+                // 准备神经网络输入
+                // 1. 角度（归一化到-1到1）
+                const angleInput = this.angle / Math.PI - 1; // -1 到 1
+                // 2. 传感器距离（归一化到0-1）
+                const sensorInput = this.sensorDistance / sensorLength;
+                // 3. 到终点的距离（归一化到0-1，假设最大距离为画布对角线）
+                const maxDistance = Math.sqrt(gameCanvas.width ** 2 + gameCanvas.height ** 2);
+                const distanceInput = this.distanceToGoal / maxDistance;
+                
+                // 神经网络预测
+                const inputs = [angleInput, sensorInput, distanceInput];
+                const outputs = this.brain.predict(inputs);
+                
+                // 输出处理
+                this.rotation = outputs[0] * 0.2; // 缩放旋转速度
+                this.speed = outputs[1] * 3; // 缩放移动速度
+                
+                // 更新角度和位置
+                this.angle += this.rotation;
+                
+                // 归一化角度到 0-2π
+                if (this.angle > Math.PI * 2) this.angle -= Math.PI * 2;
+                if (this.angle < 0) this.angle += Math.PI * 2;
+                
+                // 更新位置
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed;
+                
+                // 边界检查
+                if (this.x < 0 || this.x > gameCanvas.width || 
+                    this.y < 0 || this.y > gameCanvas.height) {
+                    this.alive = false;
+                    this.fitness -= 5; // 出界惩罚
+                }
+                
+                // 更新显示信息
+                this.infoText = `旋转: ${this.rotation.toFixed(2)}, 移动: ${this.speed.toFixed(2)}`;
+                
+                // 计算适应度 - 改进版本
+                // 1. 基础适应度：与终点距离的倒数（主要奖励）
+                let newFitness = 1 / (this.distanceToGoal + 1);
+                
+                // 2. 前进奖励（鼓励正向移动）
+                if (this.speed > 0) {
+                    const forwardBonus = this.speed * config.forwardReward;
+                    newFitness += forwardBonus;
+                    this.forwardRewardAccumulated += forwardBonus;
+                }
+                
+                // 3. 方向对齐奖励（鼓励朝向终点）
+                const angleToGoal = this.calculateAngleToGoal(goal);
+                const alignmentBonus = (1 - Math.abs(angleToGoal)) * config.alignmentReward;
+                newFitness += alignmentBonus;
+                this.alignmentRewardAccumulated += alignmentBonus;
+                
+                // 4. 对不移动的个体施加惩罚
+                if (Math.abs(this.speed) < 0.1) {
+                    newFitness -= config.movePenalty;
+                }
+                
+                // 5. 对后退的额外惩罚（如果速度小于0）
+                if (this.speed < -0.1) {
+                    newFitness -= Math.abs(this.speed) * 0.05; // 后退惩罚
+                }
+                
+                // 累加适应度
+                this.fitness += newFitness;
+                
+                // 更新调试信息（仅对选中个体）
+                if (this.id === config.selectedIndividual) {
+                    debugInfo.textContent = `前进奖励: ${this.forwardRewardAccumulated.toFixed(2)} | 方向对齐: ${this.alignmentRewardAccumulated.toFixed(2)}`;
+                }
+            }
+            
+            // 绘制三角形
+            draw() {
+                if (!this.alive && !this.reachedGoal) return;
+                
+                // 绘制轨迹
+                if (this.trail.length > 1) {
+                    ctx.strokeStyle = this.reachedGoal ? currentTheme.successTrailColor : currentTheme.trailColor;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                    for (let i = 1; i < this.trail.length; i++) {
+                        ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                    }
+                    ctx.stroke();
+                }
+                
+                // 绘制传感器线
+                ctx.strokeStyle = this.reachedGoal ? currentTheme.goalColor : currentTheme.sensorColor;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(
+                    this.x + Math.cos(this.angle) * this.sensorDistance,
+                    this.y + Math.sin(this.angle) * this.sensorDistance
+                );
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // 保存上下文状态
+                ctx.save();
+                
+                // 移动到三角形位置并旋转
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                
+                // 绘制三角形
+                ctx.fillStyle = this.reachedGoal ? currentTheme.goalColor : 
+                               this.timedOut ? currentTheme.timeoutColor : this.color;
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                
+                ctx.beginPath();
+                ctx.moveTo(this.size, 0);
+                ctx.lineTo(-this.size / 2, this.size / 2);
+                ctx.lineTo(-this.size / 2, -this.size / 2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                
+                // 恢复上下文状态
+                ctx.restore();
+                
+                // 绘制个体信息（仅对选中的个体）
+                if (this.id === config.selectedIndividual) {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(this.x - 40, this.y - this.size - 25, 80, 20);
+                    
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(this.infoText, this.x, this.y - this.size - 10);
+                    
+                    // 绘制到目标的连线
+                    ctx.strokeStyle = 'rgba(0, 255, 136, 0.5)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(game.goal.x, game.goal.y);
+                    ctx.stroke();
+                }
+            }
+            
+            // 计算线段与圆的交点
+            lineCircleIntersection(x1, y1, x2, y2, cx, cy, r) {
+                // 向量化计算
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const fx = x1 - cx;
+                const fy = y1 - cy;
+                
+                const a = dx * dx + dy * dy;
+                const b = 2 * (fx * dx + fy * dy);
+                const c = fx * fx + fy * fy - r * r;
+                
+                const discriminant = b * b - 4 * a * c;
+                
+                if (discriminant < 0) {
+                    return {hit: false};
+                }
+                
+                const t = (-b - Math.sqrt(discriminant)) / (2 * a);
+                
+                if (t >= 0 && t <= 1) {
+                    return {
+                        hit: true,
+                        x: x1 + dx * t,
+                        y: y1 + dy * t
+                    };
+                }
+                
+                return {hit: false};
+            }
+            
+            // 计算线段与线段的交点
+            lineLineIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
+                const denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+                
+                if (Math.abs(denominator) < 0.0001) {
+                    return {hit: false};
+                }
+                
+                const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denominator;
+                const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denominator;
+                
+                if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+                    return {
+                        hit: true,
+                        x: x1 + t * (x2 - x1),
+                        y: y1 + t * (y2 - y1)
+                    };
+                }
+                
+                return {hit: false};
+            }
+            
+            // 重置个体位置和状态（保留神经网络）
+            reset(x, y) {
+                this.x = x;
+                this.y = y;
+                this.angle = Math.random() * Math.PI * 2;
+                this.rotation = 0;
+                this.speed = 0;
+                this.alive = true;
+                this.fitness = 0;
+                this.distanceToGoal = 0;
+                this.sensorDistance = 0;
+                this.steps = 0;
+                this.reachedGoal = false;
+                this.timedOut = false;
+                this.forwardRewardAccumulated = 0;
+                this.alignmentRewardAccumulated = 0;
+                this.trail = [];
+                this.infoText = `旋转: 0.00, 移动: 0.00`;
+            }
+        }
+        
+        // 障碍物类
+        class Obstacle {
+            constructor(x, y, radius) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.color = currentTheme.obstacleColor;
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 添加光泽效果
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.beginPath();
+                ctx.arc(this.x - this.radius/3, this.y - this.radius/3, this.radius/3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // 终点类
+        class Goal {
+            constructor(x, y, radius) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.color = currentTheme.goalColor;
+            }
+            
+            draw() {
+                // 绘制脉冲效果
+                const pulse = (Date.now() / 1000) % 1;
+                const pulseRadius = this.radius * (1 + pulse * 0.5);
+                
+                ctx.fillStyle = this.color.replace(')', ', 0.2)').replace('rgb', 'rgba');
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, pulseRadius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 绘制终点圆
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 添加十字标记
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(this.x - this.radius/2, this.y);
+                ctx.lineTo(this.x + this.radius/2, this.y);
+                ctx.moveTo(this.x, this.y - this.radius/2);
+                ctx.lineTo(this.x, this.y + this.radius/2);
+                ctx.stroke();
+            }
+        }
+        
+        // 游戏主类
+        class Game {
+            constructor() {
+                this.obstacles = [];
+                this.triangles = [];
+                this.goal = null;
+                this.bestBrain = null;
+                this.initScene();
+                this.initEventListeners();
+                this.updateUI();
+            }
+            
+            // 初始化场景
+            initScene() {
+                // 清空数组
+                this.obstacles = [];
+                
+                // 创建障碍物
+                if (config.sceneMode === 'fixed') {
+                    // 固定模式
+                    this.obstacles.push(new Obstacle(200, 150, 40));
+                    this.obstacles.push(new Obstacle(400, 300, 50));
+                    this.obstacles.push(new Obstacle(600, 200, 35));
+                    this.obstacles.push(new Obstacle(300, 450, 45));
+                    this.obstacles.push(new Obstacle(500, 100, 30));
+                    
+                    // 终点
+                    this.goal = new Goal(700, 500, 30);
+                } else {
+                    // 随机模式
+                    this.generateRandomScene();
+                }
+                
+                // 如果没有三角形个体，创建它们
+                if (this.triangles.length === 0) {
+                    for (let i = 0; i < config.populationSize; i++) {
+                        const triangle = new Triangle(50, 300);
+                        this.triangles.push(triangle);
+                    }
+                } else {
+                    // 重置现有个体的位置和状态
+                    for (let i = 0; i < this.triangles.length; i++) {
+                        this.triangles[i].reset(50, 300);
+                    }
+                }
+                
+                // 如果存在最佳大脑，应用到第一个个体
+                if (this.bestBrain) {
+                    this.triangles[0].brain = this.bestBrain.copy();
+                    this.triangles[0].color = currentTheme.bestAgentColor; // 标记最佳个体
+                }
+                
+                config.generation = 0;
+                config.bestFitness = 0;
+                config.avgFitness = 0;
+                config.aliveCount = config.populationSize;
+                config.successCount = 0;
+                config.timeoutCount = 0;
+                config.avgSpeed = 0;
+                config.forwardRatio = 0;
+                
+                // 更新地图状态显示
+                mapChangeValue.textContent = config.sceneMode === 'fixed' ? '固定' : '随机';
+            }
+            
+            // 生成随机场景
+            generateRandomScene() {
+                this.obstacles = [];
+                
+                // 随机障碍物数量
+                const numObstacles = 5 + Math.floor(Math.random() * 6); // 5到10个障碍物
+                
+                for (let i = 0; i < numObstacles; i++) {
+                    // 随机位置，但要避免与起点太近
+                    let x, y, radius;
+                    let validPosition = false;
+                    
+                    // 尝试最多50次找到有效位置
+                    for (let attempts = 0; attempts < 50; attempts++) {
+                        x = 100 + Math.random() * (gameCanvas.width - 200);
+                        y = 100 + Math.random() * (gameCanvas.height - 200);
+                        radius = 20 + Math.random() * 40;
+                        
+                        // 检查是否离起点太近
+                        const distToStart = Math.sqrt((x - 50)**2 + (y - 300)**2);
+                        
+                        if (distToStart > radius + 80) {
+                            validPosition = true;
+                            break;
+                        }
+                    }
+                    
+                    if (validPosition) {
+                        this.obstacles.push(new Obstacle(x, y, radius));
+                    }
+                }
+                
+                // 随机终点（不与障碍物重叠）
+                let validPosition = false;
+                let goalX, goalY;
+                
+                while (!validPosition) {
+                    goalX = 200 + Math.random() * (gameCanvas.width - 400);
+                    goalY = 200 + Math.random() * (gameCanvas.height - 400);
+                    
+                    validPosition = true;
+                    for (const obstacle of this.obstacles) {
+                        const dist = Math.sqrt((goalX - obstacle.x)**2 + (goalY - obstacle.y)**2);
+                        if (dist < obstacle.radius + 80) {
+                            validPosition = false;
+                            break;
+                        }
+                    }
+                }
+                
+                this.goal = new Goal(goalX, goalY, 30);
+            }
+            
+            // 重新生成场景（仅随机模式使用）
+            regenerateScene() {
+                if (config.sceneMode === 'random') {
+                    this.generateRandomScene();
+                }
+            }
+            
+            // 初始化事件监听器
+            initEventListeners() {
+                startBtn.addEventListener('click', () => {
+                    config.training = true;
+                    this.updateUI();
+                    this.gameLoop();
+                });
+                
+                pauseBtn.addEventListener('click', () => {
+                    config.training = false;
+                    this.updateUI();
+                });
+                
+                resetBtn.addEventListener('click', () => {
+                    config.training = false;
+                    this.initScene();
+                    this.updateUI();
+                    this.draw();
+                });
+                
+                stepBtn.addEventListener('click', () => {
+                    if (!config.training) {
+                        this.step();
+                    }
+                });
+                
+                // 主题按钮
+                themeCyber.addEventListener('click', () => updateTheme('cyber'));
+                themeNeon.addEventListener('click', () => updateTheme('neon'));
+                themeFire.addEventListener('click', () => updateTheme('fire'));
+                themeForest.addEventListener('click', () => updateTheme('forest'));
+                themeIce.addEventListener('click', () => updateTheme('ice'));
+                
+                populationSlider.addEventListener('input', () => {
+                    config.populationSize = parseInt(populationSlider.value);
+                    populationValue.textContent = config.populationSize;
+                    if (!config.training) {
+                        this.initScene();
+                        this.draw();
+                    }
+                });
+                
+                penaltySlider.addEventListener('input', () => {
+                    config.movePenalty = parseFloat(penaltySlider.value);
+                    penaltyValue.textContent = config.movePenalty.toFixed(2);
+                });
+                
+                forwardRewardSlider.addEventListener('input', () => {
+                    config.forwardReward = parseFloat(forwardRewardSlider.value);
+                    forwardRewardValue.textContent = config.forwardReward.toFixed(3);
+                });
+                
+                alignmentRewardSlider.addEventListener('input', () => {
+                    config.alignmentReward = parseFloat(alignmentRewardSlider.value);
+                    alignmentRewardValue.textContent = config.alignmentReward.toFixed(3);
+                });
+                
+                mutationSlider.addEventListener('input', () => {
+                    config.mutationRate = parseFloat(mutationSlider.value);
+                    mutationValue.textContent = config.mutationRate.toFixed(2);
+                });
+                
+                maxStepsSlider.addEventListener('input', () => {
+                    config.maxSteps = parseInt(maxStepsSlider.value);
+                    maxStepsValue.textContent = config.maxSteps;
+                });
+                
+                timeoutPenaltyCheckbox.addEventListener('change', () => {
+                    config.timeoutPenaltyEnabled = timeoutPenaltyCheckbox.checked;
+                });
+                
+                boundaryDetectionCheckbox.addEventListener('change', () => {
+                    config.boundaryDetectionEnabled = boundaryDetectionCheckbox.checked;
+                });
+                
+                directionPreferenceCheckbox.addEventListener('change', () => {
+                    config.directionPreferenceEnabled = directionPreferenceCheckbox.checked;
+                });
+                
+                randomizeEachGenCheckbox.addEventListener('change', () => {
+                    config.randomizeEachGen = randomizeEachGenCheckbox.checked;
+                });
+                
+                fixedModeBtn.addEventListener('click', () => {
+                    config.sceneMode = 'fixed';
+                    fixedModeBtn.classList.add('active');
+                    randomModeBtn.classList.remove('active');
+                    if (!config.training) {
+                        this.initScene();
+                        this.draw();
+                    }
+                });
+                
+                randomModeBtn.addEventListener('click', () => {
+                    config.sceneMode = 'random';
+                    randomModeBtn.classList.add('active');
+                    fixedModeBtn.classList.remove('active');
+                    if (!config.training) {
+                        this.initScene();
+                        this.draw();
+                    }
+                });
+                
+                exportBtn.addEventListener('click', () => {
+                    if (this.bestBrain) {
+                        const weights = this.bestBrain.exportWeights();
+                        weightsTextarea.value = JSON.stringify(weights, null, 2);
+                    }
+                });
+                
+                importBtn.addEventListener('click', () => {
+                    try {
+                        const weights = JSON.parse(weightsTextarea.value);
+                        const nn = new NeuralNetwork(3, 8, 8, 2);
+                        nn.importWeights(weights);
+                        this.bestBrain = nn;
+                        
+                        // 应用到第一个个体
+                        if (this.triangles.length > 0) {
+                            this.triangles[0].brain = nn.copy();
+                            this.triangles[0].color = currentTheme.bestAgentColor;
+                        }
+                        
+                        alert('权重导入成功！');
+                    } catch (error) {
+                        alert('权重导入失败，请检查JSON格式！');
+                    }
+                });
+                
+                // 点击选择个体
+                gameCanvas.addEventListener('click', (e) => {
+                    const rect = gameCanvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    // 查找点击的个体
+                    for (const triangle of this.triangles) {
+                        if (triangle.alive || triangle.reachedGoal) {
+                            const dist = Math.sqrt((x - triangle.x)**2 + (y - triangle.y)**2);
+                            if (dist < triangle.size * 2) {
+                                config.selectedIndividual = triangle.id;
+                                individualInfo.textContent = `个体 #${triangle.id}: ${triangle.infoText}`;
+                                this.drawNeuralNetwork(triangle.brain);
+                                break;
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 单步执行
+            step() {
+                this.updatePopulation();
+                this.draw();
+            }
+            
+            // 更新种群
+            updatePopulation() {
+                // 更新所有个体
+                let aliveCount = 0;
+                let successCount = 0;
+                let timeoutCount = 0;
+                let totalFitness = 0;
+                let maxFitness = -Infinity;
+                let totalSpeed = 0;
+                let forwardCount = 0;
+                
+                for (const triangle of this.triangles) {
+                    if (triangle.alive || triangle.reachedGoal) {
+                        triangle.update(this.obstacles, this.goal);
+                        
+                        if (triangle.alive) aliveCount++;
+                        if (triangle.reachedGoal) successCount++;
+                        if (triangle.timedOut) timeoutCount++;
+                        
+                        totalFitness += triangle.fitness;
+                        totalSpeed += triangle.speed;
+                        
+                        if (triangle.speed > 0) forwardCount++;
+                        
+                        if (triangle.fitness > maxFitness) {
+                            maxFitness = triangle.fitness;
+                        }
+                    }
+                }
+                
+                config.aliveCount = aliveCount;
+                config.successCount = successCount;
+                config.timeoutCount = timeoutCount;
+                config.bestFitness = maxFitness;
+                config.avgFitness = totalFitness / config.populationSize;
+                config.avgSpeed = totalSpeed / config.populationSize;
+                config.forwardRatio = forwardCount / config.populationSize * 100;
+                
+                // 更新训练统计信息
+                trainingStats.textContent = `平均移动: ${config.avgSpeed.toFixed(2)} | 前进比例: ${config.forwardRatio.toFixed(1)}%`;
+                
+                // 检查是否所有个体都已完成
+                if (aliveCount === 0) {
+                    this.nextGeneration();
+                }
+            }
+            
+            // 游戏主循环
+            gameLoop() {
+                if (!config.training) return;
+                
+                this.updatePopulation();
+                
+                // 绘制场景
+                this.draw();
+                
+                // 继续循环
+                if (config.training) {
+                    requestAnimationFrame(() => this.gameLoop());
+                }
+            }
+            
+            // 下一代
+            nextGeneration() {
+                config.generation++;
+                
+                // 在随机模式下，如果启用了每代重置地图，则重新生成场景
+                if (config.sceneMode === 'random' && config.randomizeEachGen) {
+                    this.regenerateScene();
+                }
+                
+                // 计算总适应度并找出最佳个体
+                let totalFitness = 0;
+                let bestFitness = -Infinity;
+                let bestTriangle = null;
+                
+                for (const triangle of this.triangles) {
+                    totalFitness += triangle.fitness;
+                    if (triangle.fitness > bestFitness) {
+                        bestFitness = triangle.fitness;
+                        bestTriangle = triangle;
+                    }
+                }
+                
+                // 保存最佳大脑
+                if (bestTriangle) {
+                    this.bestBrain = bestTriangle.brain.copy();
+                    
+                    // 绘制最佳个体的神经网络
+                    this.drawNeuralNetwork(this.bestBrain);
+                    
+                    // 更新选中个体信息
+                    config.selectedIndividual = bestTriangle.id;
+                    individualInfo.textContent = `最佳个体 #${bestTriangle.id}: 适应度: ${bestTriangle.fitness.toFixed(2)}`;
+                }
+                
+                // 创建新一代
+                const newTriangles = [];
+                
+                // 将最佳个体保留到下一代（精英保留）
+                if (bestTriangle) {
+                    const elite = new Triangle(50, 300, bestTriangle.brain.copy());
+                    elite.color = currentTheme.bestAgentColor; // 标记为精英个体
+                    elite.brain.mutate(config.mutationRate * 0.3); // 轻微变异
+                    newTriangles.push(elite);
+                }
+                
+                // 通过轮盘赌选择其他个体
+                for (let i = newTriangles.length; i < config.populationSize; i++) {
+                    // 选择父代
+                    const parent = this.selectParent(totalFitness);
+                    
+                    // 创建子代
+                    const child = new Triangle(50, 300, parent.brain.copy());
+                    child.brain.mutate(config.mutationRate);
+                    newTriangles.push(child);
+                }
+                
+                // 替换旧种群
+                this.triangles = newTriangles;
+                
+                // 更新UI
+                this.updateUI();
+                
+                // 更新地图状态显示
+                mapChangeValue.textContent = config.sceneMode === 'fixed' ? '固定' : (config.randomizeEachGen ? '每代重置' : '随机');
+            }
+            
+            // 轮盘赌选择
+            selectParent(totalFitness) {
+                let rand = Math.random() * totalFitness;
+                let runningSum = 0;
+                
+                for (const triangle of this.triangles) {
+                    runningSum += triangle.fitness;
+                    if (runningSum >= rand) {
+                        return triangle;
+                    }
+                }
+                
+                return this.triangles[0];
+            }
+            
+            // 绘制场景
+            draw() {
+                // 清空画布
+                ctx.fillStyle = currentTheme.backgroundColor;
+                ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+                
+                // 绘制网格背景
+                this.drawGrid();
+                
+                // 绘制边界（如果启用边界检测）
+                if (config.boundaryDetectionEnabled) {
+                    ctx.strokeStyle = currentTheme.boundaryColor;
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(5, 5, gameCanvas.width - 10, gameCanvas.height - 10);
+                }
+                
+                // 绘制障碍物
+                for (const obstacle of this.obstacles) {
+                    obstacle.draw();
+                }
+                
+                // 绘制终点
+                this.goal.draw();
+                
+                // 绘制所有个体
+                for (const triangle of this.triangles) {
+                    triangle.draw();
+                }
+                
+                // 绘制信息文本
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(10, 10, 250, 150);
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`世代: ${config.generation}`, 20, 30);
+                ctx.fillText(`存活: ${config.aliveCount}/${config.populationSize}`, 20, 50);
+                ctx.fillText(`成功: ${config.successCount}`, 20, 70);
+                ctx.fillText(`超时: ${config.timeoutCount}`, 20, 90);
+                ctx.fillText(`最佳适应度: ${config.bestFitness.toFixed(2)}`, 20, 110);
+                ctx.fillText(`前进比例: ${config.forwardRatio.toFixed(1)}%`, 20, 130);
+                ctx.fillText(`地图: ${config.sceneMode === 'fixed' ? '固定' : (config.randomizeEachGen ? '动态' : '随机')}`, 20, 150);
+            }
+            
+            // 绘制网格背景
+            drawGrid() {
+                ctx.strokeStyle = currentTheme.gridColor;
+                ctx.lineWidth = 1;
+                
+                // 垂直线
+                for (let x = 0; x < gameCanvas.width; x += 50) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, gameCanvas.height);
+                    ctx.stroke();
+                }
+                
+                // 水平线
+                for (let y = 0; y < gameCanvas.height; y += 50) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(gameCanvas.width, y);
+                    ctx.stroke();
+                }
+            }
+            
+            // 绘制神经网络可视化
+            drawNeuralNetwork(nn) {
+                neuralCtx.clearRect(0, 0, neuralCanvas.width, neuralCanvas.height);
+                
+                // 网络结构
+                const layers = [
+                    {nodes: nn.inputNodes, label: '输入'},
+                    {nodes: nn.hiddenNodes1, label: '隐藏1'},
+                    {nodes: nn.hiddenNodes2, label: '隐藏2'},
+                    {nodes: nn.outputNodes, label: '输出'}
+                ];
+                
+                const layerWidth = neuralCanvas.width / (layers.length + 1);
+                const maxNodes = Math.max(...layers.map(l => l.nodes));
+                const nodeRadius = 10;
+                
+                // 绘制连接
+                neuralCtx.strokeStyle = 'rgba(0, 200, 255, 0.3)';
+                neuralCtx.lineWidth = 1;
+                
+                // 绘制每层之间的连接
+                for (let l = 0; l < layers.length - 1; l++) {
+                    const nodes1 = layers[l].nodes;
+                    const nodes2 = layers[l + 1].nodes;
+                    
+                    for (let i = 0; i < nodes1; i++) {
+                        const x1 = (l + 1) * layerWidth;
+                        const y1 = neuralCanvas.height / 2 + (i - nodes1/2 + 0.5) * 25;
+                        
+                        for (let j = 0; j < nodes2; j++) {
+                            const x2 = (l + 2) * layerWidth;
+                            const y2 = neuralCanvas.height / 2 + (j - nodes2/2 + 0.5) * 25;
+                            
+                            neuralCtx.beginPath();
+                            neuralCtx.moveTo(x1, y1);
+                            neuralCtx.lineTo(x2, y2);
+                            neuralCtx.stroke();
+                        }
+                    }
+                }
+                
+                // 绘制节点
+                for (let l = 0; l < layers.length; l++) {
+                    const nodes = layers[l].nodes;
+                    const x = (l + 1) * layerWidth;
+                    
+                    // 层标签
+                    neuralCtx.fillStyle = '#a0c0ff';
+                    neuralCtx.font = '12px Arial';
+                    neuralCtx.textAlign = 'center';
+                    neuralCtx.fillText(layers[l].label, x, 20);
+                    
+                    // 节点
+                    for (let i = 0; i < nodes; i++) {
+                        const y = neuralCanvas.height / 2 + (i - nodes/2 + 0.5) * 25;
+                        
+                        // 节点圆
+                        neuralCtx.fillStyle = '#0055aa';
+                        neuralCtx.beginPath();
+                        neuralCtx.arc(x, y, nodeRadius, 0, Math.PI * 2);
+                        neuralCtx.fill();
+                        
+                        // 节点边框
+                        neuralCtx.strokeStyle = '#00aaff';
+                        neuralCtx.lineWidth = 2;
+                        neuralCtx.beginPath();
+                        neuralCtx.arc(x, y, nodeRadius, 0, Math.PI * 2);
+                        neuralCtx.stroke();
+                    }
+                }
+                
+                // 绘制标题
+                neuralCtx.fillStyle = '#00ccff';
+                neuralCtx.font = 'bold 14px Arial';
+                neuralCtx.textAlign = 'center';
+                neuralCtx.fillText('神经网络 [3,8,8,2] | 隐藏层:ReLU | 输出:tanh/sigmoid', neuralCanvas.width/2, neuralCanvas.height - 10);
+            }
+            
+            // 更新UI
+            updateUI() {
+                generationValue.textContent = config.generation;
+                bestFitnessValue.textContent = config.bestFitness.toFixed(2);
+                avgFitnessValue.textContent = config.avgFitness.toFixed(2);
+                aliveCountValue.textContent = `${config.aliveCount}/${config.populationSize}`;
+                successCountValue.textContent = config.successCount;
+                timeoutCountValue.textContent = config.timeoutCount;
+                avgSpeedValue.textContent = config.avgSpeed.toFixed(2);
+                
+                // 更新按钮状态
+                startBtn.disabled = config.training;
+                pauseBtn.disabled = !config.training;
+                stepBtn.disabled = config.training;
+                
+                // 绘制神经网络
+                if (this.triangles.length > 0 && this.triangles[0].brain) {
+                    this.drawNeuralNetwork(this.triangles[0].brain);
+                }
+                
+                // 更新调试信息
+                debugInfo.textContent = `前进奖励: ${config.forwardReward.toFixed(3)} | 方向对齐: ${config.alignmentReward.toFixed(3)}`;
+            }
+        }
+        
+        // 初始化游戏
+        const game = new Game();
+        
+        // 初始绘制
+        game.draw();
+        game.drawNeuralNetwork(new NeuralNetwork(3, 8, 8, 2));
+        
+        // 更新个体信息显示
+        setInterval(() => {
+            if (game.triangles.length > 0) {
+                for (const triangle of game.triangles) {
+                    if (triangle.id === config.selectedIndividual) {
+                        individualInfo.textContent = `个体 #${triangle.id}: ${triangle.infoText} | 适应度: ${triangle.fitness.toFixed(2)}`;
+                        break;
+                    }
+                }
+            }
+        }, 100);
+        
+        // 添加键盘快捷键
+        document.addEventListener('keydown', (e) => {
+            if (e.key === ' ') { // 空格键切换训练状态
+                if (config.training) {
+                    config.training = false;
+                } else {
+                    config.training = true;
+                    game.gameLoop();
+                }
+                game.updateUI();
+            } else if (e.key === 'r' || e.key === 'R') { // R键重置
+                config.training = false;
+                game.initScene();
+                game.updateUI();
+                game.draw();
+            } else if (e.key === 'd' || e.key === 'D') { // D键切换调试模式
+                config.debugMode = !config.debugMode;
+                debugInfo.style.display = config.debugMode ? 'block' : 'none';
+            } else if (e.key === 's' || e.key === 'S') { // S键单步执行
+                if (!config.training) {
+                    game.step();
+                }
+            } else if (e.key === 't' || e.key === 'T') { // T键切换主题
+                const themeKeys = Object.keys(themes);
+                const currentIndex = themeKeys.indexOf(config.theme);
+                const nextIndex = (currentIndex + 1) % themeKeys.length;
+                updateTheme(themeKeys[nextIndex]);
+            } else if (e.key === 'm' || e.key === 'M') { // M键切换地图模式
+                config.sceneMode = config.sceneMode === 'fixed' ? 'random' : 'fixed';
+                if (config.sceneMode === 'fixed') {
+                    fixedModeBtn.classList.add('active');
+                    randomModeBtn.classList.remove('active');
+                } else {
+                    randomModeBtn.classList.add('active');
+                    fixedModeBtn.classList.remove('active');
+                }
+                if (!config.training) {
+                    game.initScene();
+                    game.draw();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
