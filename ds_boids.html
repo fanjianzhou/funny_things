@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高级多群体粒子模拟系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e);
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            width: 100%;
+            max-width: 1600px;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #dda0dd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            max-width: 1000px;
+            margin: 0 auto 20px;
+            line-height: 1.5;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            width: 100%;
+            max-width: 1600px;
+            justify-content: center;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            min-width: 800px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            background-color: #0f172a;
+            position: relative;
+        }
+        
+        #simulationCanvas {
+            display: block;
+            background-color: #0a0a0a;
+        }
+        
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            width: 750px;
+            gap: 25px;
+        }
+        
+        .panel {
+            background-color: rgba(30, 41, 59, 0.9);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+        }
+        
+        .panel h2 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #475569;
+        }
+        
+        .panel h2 i {
+            font-size: 1.2rem;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group h3 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: #94a3b8;
+        }
+        
+        .param-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            color: #cbd5e1;
+            min-width: 150px;
+        }
+        
+        .color-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .color-red { background-color: #ff6b6b; }
+        .color-green { background-color: #4ecdc4; }
+        .color-blue { background-color: #45b7d1; }
+        .color-yellow { background-color: #ffeaa7; }
+        .color-purple { background-color: #dda0dd; }
+        .color-cyan { background-color: #96ceb4; }
+        
+        input[type="range"] {
+            width: 200px;
+            height: 6px;
+            border-radius: 3px;
+            background: #475569;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #60a5fa;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .value-display {
+            min-width: 50px;
+            text-align: center;
+            font-weight: 600;
+            color: #60a5fa;
+            background-color: rgba(30, 41, 59, 0.8);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid #475569;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        #resetBtn {
+            background-color: #475569;
+            color: #f1f5f9;
+        }
+        
+        #resetBtn:hover {
+            background-color: #64748b;
+            transform: translateY(-2px);
+        }
+        
+        #randomizeBtn {
+            background: linear-gradient(90deg, #ff6b6b, #45b7d1);
+            color: white;
+        }
+        
+        #randomizeBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+        
+        #textFormBtn {
+            background: linear-gradient(90deg, #4ecdc4, #dda0dd);
+            color: white;
+        }
+        
+        #textFormBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(221, 160, 221, 0.4);
+        }
+        
+        #toggleSlimeBtn {
+            background: linear-gradient(90deg, #ffeaa7, #96ceb4);
+            color: #1a1a2e;
+        }
+        
+        #toggleSlimeBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(150, 206, 180, 0.4);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .stat-item {
+            background-color: rgba(30, 41, 59, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        
+        .text-input-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        #textInput {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background-color: rgba(30, 41, 59, 0.8);
+            color: #f1f5f9;
+            font-size: 1rem;
+            outline: none;
+        }
+        
+        #textInput:focus {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+        }
+        
+        .mouse-controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .mouse-mode {
+            flex: 1;
+            padding: 10px;
+            background-color: rgba(30, 41, 59, 0.8);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid #475569;
+            transition: all 0.2s ease;
+        }
+        
+        .mouse-mode.active {
+            border-color: #60a5fa;
+            background-color: rgba(96, 165, 250, 0.2);
+        }
+        
+        .mouse-mode:hover:not(.active) {
+            background-color: rgba(71, 85, 105, 0.8);
+        }
+        
+        .footer-info {
+            margin-top: 30px;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.9rem;
+            padding-bottom: 20px;
+            max-width: 1600px;
+            line-height: 1.6;
+        }
+        
+        .info-box {
+            background-color: rgba(30, 41, 59, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #334155;
+        }
+        
+        .info-box h4 {
+            color: #cbd5e1;
+            margin-bottom: 10px;
+        }
+        
+        .info-box p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 1600px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .canvas-container, .controls-container {
+                width: 100%;
+                max-width: 1200px;
+            }
+            
+            .canvas-container {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>高级多群体粒子模拟系统</h1>
+        <p class="subtitle">六群体细菌模拟 | 增殖死亡机制 | 黏菌行为模拟 | 鼠标干涉 | 文字成型</p>
+    </header>
+    
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="simulationCanvas" width="1000" height="700"></canvas>
+            <div class="info-box" style="position: absolute; bottom: 20px; left: 20px; width: 300px;">
+                <h4>鼠标控制模式</h4>
+                <p>当前模式: <span id="currentMouseMode">吸引</span></p>
+                <p>• 吸引: 粒子被鼠标吸引</p>
+                <p>• 排斥: 粒子被鼠标排斥</p>
+                <p>• 食物: 鼠标作为食物源</p>
+                <p>• 清除: 鼠标附近粒子死亡</p>
+            </div>
+        </div>
+        
+        <div class="controls-container">
+            <div class="panel">
+                <h2><i>⚙️</i> 全局控制</h2>
+                <div class="control-group">
+                    <h3>粒子总数控制</h3>
+                    <div class="param-row">
+                        <label><span class="color-dot color-red"></span> 红色群体</label>
+                        <input type="range" id="redCount" min="10" max="200" value="50">
+                        <span class="value-display" id="redCountValue">50</span>
+                    </div>
+                    <div class="param-row">
+                        <label><span class="color-dot color-green"></span> 绿色群体</label>
+                        <input type="range" id="greenCount" min="10" max="200" value="50">
+                        <span class="value-display" id="greenCountValue">50</span>
+                    </div>
+                    <div class="param-row">
+                        <label><span class="color-dot color-blue"></span> 蓝色群体</label>
+                        <input type="range" id="blueCount" min="10" max="200" value="50">
+                        <span class="value-display" id="blueCountValue">50</span>
+                    </div>
+                    <div class="param-row">
+                        <label><span class="color-dot color-yellow"></span> 黄色群体</label>
+                        <input type="range" id="yellowCount" min="10" max="200" value="50">
+                        <span class="value-display" id="yellowCountValue">50</span>
+                    </div>
+                    <div class="param-row">
+                        <label><span class="color-dot color-purple"></span> 紫色群体</label>
+                        <input type="range" id="purpleCount" min="10" max="200" value="50">
+                        <span class="value-display" id="purpleCountValue">50</span>
+                    </div>
+                    <div class="param-row">
+                        <label><span class="color-dot color-cyan"></span> 青色群体</label>
+                        <input type="range" id="cyanCount" min="10" max="200" value="50">
+                        <span class="value-display" id="cyanCountValue">50</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>全局参数</h3>
+                    <div class="param-row">
+                        <label>最大速度</label>
+                        <input type="range" id="maxSpeed" min="1" max="10" step="0.5" value="4">
+                        <span class="value-display" id="maxSpeedValue">4.0</span>
+                    </div>
+                    <div class="param-row">
+                        <label>感知范围</label>
+                        <input type="range" id="perceptionRadius" min="20" max="150" value="80">
+                        <span class="value-display" id="perceptionRadiusValue">80</span>
+                    </div>
+                    <div class="param-row">
+                        <label>边界反弹</label>
+                        <input type="range" id="boundaryBounce" min="0" max="1" step="0.1" value="0.8">
+                        <span class="value-display" id="boundaryBounceValue">0.8</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2><i>🦠</i> 细菌行为模拟</h2>
+                <div class="control-group">
+                    <h3>增殖与死亡</h3>
+                    <div class="param-row">
+                        <label>分裂概率 (%)</label>
+                        <input type="range" id="splitChance" min="0" max="5" step="0.1" value="0.5">
+                        <span class="value-display" id="splitChanceValue">0.5%</span>
+                    </div>
+                    <div class="param-row">
+                        <label>死亡概率 (%)</label>
+                        <input type="range" id="deathChance" min="0" max="5" step="0.1" value="0.2">
+                        <span class="value-display" id="deathChanceValue">0.2%</span>
+                    </div>
+                    <div class="param-row">
+                        <label>最大寿命</label>
+                        <input type="range" id="maxLifespan" min="100" max="2000" step="50" value="800">
+                        <span class="value-display" id="maxLifespanValue">800</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>黏菌模拟</h3>
+                    <div class="param-row">
+                        <label>黏菌模式</label>
+                        <input type="range" id="slimeMode" min="0" max="100" value="0">
+                        <span class="value-display" id="slimeModeValue">0%</span>
+                    </div>
+                    <div class="param-row">
+                        <label>连接距离</label>
+                        <input type="range" id="connectionDistance" min="10" max="100" value="40">
+                        <span class="value-display" id="connectionDistanceValue">40</span>
+                    </div>
+                    <div class="param-row">
+                        <label>连接强度</label>
+                        <input type="range" id="connectionStrength" min="0" max="1" step="0.1" value="0.3">
+                        <span class="value-display" id="connectionStrengthValue">0.3</span>
+                    </div>
+                </div>
+                
+                <div class="buttons">
+                    <button id="toggleSlimeBtn">切换黏菌模式</button>
+                    <button id="resetBtn">重置模拟</button>
+                    <button id="randomizeBtn">随机参数</button>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2><i>🖱️</i> 鼠标控制与文字成型</h2>
+                <div class="control-group">
+                    <h3>鼠标交互</h3>
+                    <div class="mouse-controls">
+                        <div class="mouse-mode active" data-mode="attract">
+                            <div>吸引</div>
+                            <small>粒子被鼠标吸引</small>
+                        </div>
+                        <div class="mouse-mode" data-mode="repel">
+                            <div>排斥</div>
+                            <small>粒子被鼠标排斥</small>
+                        </div>
+                        <div class="mouse-mode" data-mode="food">
+                            <div>食物</div>
+                            <small>鼠标作为食物源</small>
+                        </div>
+                        <div class="mouse-mode" data-mode="kill">
+                            <div>清除</div>
+                            <small>鼠标附近粒子死亡</small>
+                        </div>
+                    </div>
+                    
+                    <div class="param-row" style="margin-top: 15px;">
+                        <label>鼠标影响半径</label>
+                        <input type="range" id="mouseRadius" min="20" max="200" value="100">
+                        <span class="value-display" id="mouseRadiusValue">100</span>
+                    </div>
+                    <div class="param-row">
+                        <label>鼠标影响强度</label>
+                        <input type="range" id="mouseStrength" min="0.1" max="5" step="0.1" value="2">
+                        <span class="value-display" id="mouseStrengthValue">2.0</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>文字成型</h3>
+                    <div class="text-input-container">
+                        <input type="text" id="textInput" placeholder="输入要成型的文字 (例如: Boids)" value="Boids">
+                        <button id="textFormBtn">应用文字</button>
+                    </div>
+                    <div class="param-row" style="margin-top: 15px;">
+                        <label>文字吸引力</label>
+                        <input type="range" id="textAttraction" min="0" max="2" step="0.1" value="0.8">
+                        <span class="value-display" id="textAttractionValue">0.8</span>
+                    </div>
+                    <div class="param-row">
+                        <label>文字保持力</label>
+                        <input type="range" id="textRetention" min="0" max="1" step="0.1" value="0.5">
+                        <span class="value-display" id="textRetentionValue">0.5</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalParticles">300</div>
+                    <div class="stat-label">总粒子数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="fpsCounter">60</div>
+                    <div class="stat-label">FPS</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="connectionsCount">0</div>
+                    <div class="stat-label">黏菌连接</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="splitCount">0</div>
+                    <div class="stat-label">分裂次数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="deathCount">0</div>
+                    <div class="stat-label">死亡次数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="slimeActive">关</div>
+                    <div class="stat-label">黏菌模式</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer-info">
+        <p>高级多群体粒子模拟系统 | 六群体细菌行为 | 黏菌网络模拟 | 鼠标交互控制 | 粒子文字成型</p>
+        <div class="info-box">
+            <h4>系统说明</h4>
+            <p>1. <strong>六群体模拟</strong>: 六种颜色粒子群体，每组独立控制数量和行为</p>
+            <p>2. <strong>细菌行为</strong>: 粒子会分裂(增殖)和死亡，模拟微生物群体</p>
+            <p>3. <strong>黏菌模拟</strong>: 开启后粒子会形成网络连接，模拟黏菌觅食行为</p>
+            <p>4. <strong>鼠标控制</strong>: 四种鼠标模式吸引、排斥、食物、清除</p>
+            <p>5. <strong>文字成型</strong>: 粒子可以聚集成输入的文字形状</p>
+        </div>
+    </div>
+
+    <script>
+        // 获取Canvas元素和上下文
+        const canvas = document.getElementById('simulationCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 粒子类
+        class Particle {
+            constructor(x, y, colorType) {
+                this.position = { x, y };
+                this.velocity = {
+                    x: (Math.random() - 0.5) * 4,
+                    y: (Math.random() - 0.5) * 4
+                };
+                this.acceleration = { x: 0, y: 0 };
+                this.colorType = colorType; // 0-5 对应六种颜色
+                this.radius = 3;
+                this.maxSpeed = parseFloat(document.getElementById('maxSpeed').value);
+                this.perceptionRadius = parseFloat(document.getElementById('perceptionRadius').value);
+                this.lifespan = Math.random() * parseFloat(document.getElementById('maxLifespan').value);
+                this.maxLifespan = parseFloat(document.getElementById('maxLifespan').value);
+                this.age = 0;
+                this.health = 1.0;
+                
+                // 根据颜色类型设置颜色
+                this.setColor();
+                
+                // 行为参数
+                this.cohesionFactor = 0.7 + Math.random() * 0.3;
+                this.separationFactor = 1.0 + Math.random() * 0.5;
+                this.minDistance = 15 + Math.random() * 10;
+                this.repulsionFactor = 1.2 + Math.random() * 0.6;
+                
+                // 文字成型目标位置
+                this.textTarget = null;
+                
+                // 黏菌连接
+                this.connections = [];
+            }
+            
+            // 设置颜色
+            setColor() {
+                const colors = [
+                    { fill: '#ff6b6b', stroke: '#ff4757' }, // 红
+                    { fill: '#4ecdc4', stroke: '#1dd1a1' }, // 绿
+                    { fill: '#45b7d1', stroke: '#2e86de' }, // 蓝
+                    { fill: '#ffeaa7', stroke: '#fdcb6e' }, // 黄
+                    { fill: '#dda0dd', stroke: '#a29bfe' }, // 紫
+                    { fill: '#96ceb4', stroke: '#55efc4' }  // 青
+                ];
+                
+                this.color = colors[this.colorType % colors.length];
+            }
+            
+            // 更新参数
+            updateParameters() {
+                this.maxSpeed = parseFloat(document.getElementById('maxSpeed').value);
+                this.perceptionRadius = parseFloat(document.getElementById('perceptionRadius').value);
+                this.maxLifespan = parseFloat(document.getElementById('maxLifespan').value);
+            }
+            
+            // 计算与其他粒子的相互作用
+            flock(particles) {
+                let cohesion = { x: 0, y: 0 };
+                let separation = { x: 0, y: 0 };
+                let totalSameColor = 0;
+                let totalDifferentColor = 0;
+                
+                // 重置连接
+                this.connections = [];
+                
+                for (let other of particles) {
+                    if (other === this) continue;
+                    
+                    // 计算距离
+                    let dx = this.position.x - other.position.x;
+                    let dy = this.position.y - other.position.y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // 如果在感知范围内
+                    if (distance > 0 && distance < this.perceptionRadius) {
+                        // 相同颜色的粒子
+                        if (this.colorType === other.colorType) {
+                            // 吸引：计算平均位置
+                            cohesion.x += other.position.x;
+                            cohesion.y += other.position.y;
+                            totalSameColor++;
+                            
+                            // 分离：如果距离小于最小距离，则推开
+                            if (distance < this.minDistance) {
+                                separation.x += dx / distance;
+                                separation.y += dy / distance;
+                            }
+                            
+                            // 黏菌连接：如果距离小于连接距离且黏菌模式开启
+                            if (distance < parseFloat(document.getElementById('connectionDistance').value) && 
+                                parseFloat(document.getElementById('slimeMode').value) > 0) {
+                                this.connections.push({
+                                    target: other,
+                                    distance: distance,
+                                    strength: parseFloat(document.getElementById('connectionStrength').value)
+                                });
+                            }
+                        }
+                        // 不同颜色的粒子：排斥
+                        else {
+                            totalDifferentColor++;
+                            
+                            // 应用排斥力，距离越近排斥力越强
+                            if (distance < this.perceptionRadius / 1.5) {
+                                separation.x += (dx / distance) * this.repulsionFactor;
+                                separation.y += (dy / distance) * this.repulsionFactor;
+                            }
+                        }
+                    }
+                }
+                
+                // 计算平均位置并应用吸引力
+                if (totalSameColor > 0) {
+                    cohesion.x /= totalSameColor;
+                    cohesion.y /= totalSameColor;
+                    
+                    // 从当前位置指向平均位置的向量
+                    cohesion.x = cohesion.x - this.position.x;
+                    cohesion.y = cohesion.y - this.position.y;
+                    
+                    // 归一化并乘以吸引力因子
+                    let dist = Math.sqrt(cohesion.x * cohesion.x + cohesion.y * cohesion.y);
+                    if (dist > 0) {
+                        cohesion.x = (cohesion.x / dist) * this.cohesionFactor;
+                        cohesion.y = (cohesion.y / dist) * this.cohesionFactor;
+                    }
+                }
+                
+                // 应用分离力
+                separation.x *= this.separationFactor;
+                separation.y *= this.separationFactor;
+                
+                // 文字成型吸引力
+                let textAttractionForce = { x: 0, y: 0 };
+                if (this.textTarget && parseFloat(document.getElementById('textAttraction').value) > 0) {
+                    let tx = this.textTarget.x - this.position.x;
+                    let ty = this.textTarget.y - this.position.y;
+                    let tDist = Math.sqrt(tx * tx + ty * ty);
+                    
+                    if (tDist > 0) {
+                        textAttractionForce.x = (tx / tDist) * parseFloat(document.getElementById('textAttraction').value);
+                        textAttractionForce.y = (ty / tDist) * parseFloat(document.getElementById('textAttraction').value);
+                        
+                        // 添加一些随机性，使文字形状不那么完美
+                        textAttractionForce.x += (Math.random() - 0.5) * 0.3;
+                        textAttractionForce.y += (Math.random() - 0.5) * 0.3;
+                    }
+                }
+                
+                // 更新加速度
+                this.acceleration.x = cohesion.x + separation.x + textAttractionForce.x;
+                this.acceleration.y = cohesion.y + separation.y + textAttractionForce.y;
+                
+                // 应用黏菌连接力
+                if (this.connections.length > 0) {
+                    let connectionForce = { x: 0, y: 0 };
+                    for (let conn of this.connections) {
+                        let dx = conn.target.position.x - this.position.x;
+                        let dy = conn.target.position.y - this.position.y;
+                        let dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist > 0) {
+                            // 连接力使粒子保持在一定距离
+                            let targetDist = parseFloat(document.getElementById('connectionDistance').value) * 0.7;
+                            let force = (dist - targetDist) * conn.strength * 0.01;
+                            
+                            connectionForce.x += (dx / dist) * force;
+                            connectionForce.y += (dy / dist) * force;
+                        }
+                    }
+                    
+                    this.acceleration.x += connectionForce.x;
+                    this.acceleration.y += connectionForce.y;
+                }
+            }
+            
+            // 应用鼠标影响
+            applyMouseForce(mouseX, mouseY, mouseMode, mouseRadius, mouseStrength) {
+                if (mouseX === null || mouseY === null) return;
+                
+                let dx = mouseX - this.position.x;
+                let dy = mouseY - this.position.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < mouseRadius) {
+                    let force = (1 - distance / mouseRadius) * mouseStrength;
+                    
+                    if (mouseMode === 'attract') {
+                        // 吸引：朝向鼠标
+                        this.acceleration.x += (dx / distance) * force * 0.5;
+                        this.acceleration.y += (dy / distance) * force * 0.5;
+                    } else if (mouseMode === 'repel') {
+                        // 排斥：远离鼠标
+                        this.acceleration.x -= (dx / distance) * force;
+                        this.acceleration.y -= (dy / distance) * force;
+                    } else if (mouseMode === 'food') {
+                        // 食物：增加生命值并向食物移动
+                        this.health = Math.min(1.0, this.health + 0.01);
+                        this.acceleration.x += (dx / distance) * force * 0.3;
+                        this.acceleration.y += (dy / distance) * force * 0.3;
+                    } else if (mouseMode === 'kill') {
+                        // 清除：减少生命值
+                        this.health -= 0.05;
+                        if (this.health <= 0) {
+                            this.health = 0;
+                        }
+                    }
+                }
+            }
+            
+            // 更新位置和速度
+            update() {
+                // 更新速度
+                this.velocity.x += this.acceleration.x;
+                this.velocity.y += this.acceleration.y;
+                
+                // 限制最大速度
+                let speed = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y);
+                if (speed > this.maxSpeed) {
+                    this.velocity.x = (this.velocity.x / speed) * this.maxSpeed;
+                    this.velocity.y = (this.velocity.y / speed) * this.maxSpeed;
+                }
+                
+                // 更新位置
+                this.position.x += this.velocity.x;
+                this.position.y += this.velocity.y;
+                
+                // 边界处理
+                let boundaryBounce = parseFloat(document.getElementById('boundaryBounce').value);
+                if (this.position.x < this.radius) {
+                    this.velocity.x *= -boundaryBounce;
+                    this.position.x = this.radius;
+                }
+                if (this.position.x > canvas.width - this.radius) {
+                    this.velocity.x *= -boundaryBounce;
+                    this.position.x = canvas.width - this.radius;
+                }
+                if (this.position.y < this.radius) {
+                    this.velocity.y *= -boundaryBounce;
+                    this.position.y = this.radius;
+                }
+                if (this.position.y > canvas.height - this.radius) {
+                    this.velocity.y *= -boundaryBounce;
+                    this.position.y = canvas.height - this.radius;
+                }
+                
+                // 更新年龄和生命值
+                this.age++;
+                this.health -= 0.0001; // 自然衰减
+                
+                // 如果生命值过低或年龄过大，标记为死亡
+                if (this.health <= 0 || this.age > this.maxLifespan) {
+                    this.health = 0;
+                }
+                
+                // 重置加速度
+                this.acceleration.x = 0;
+                this.acceleration.y = 0;
+            }
+            
+            // 绘制粒子
+            draw() {
+                // 根据生命值调整透明度
+                let alpha = this.health;
+                
+                // 绘制连接线（黏菌模式）
+                if (this.connections.length > 0 && parseFloat(document.getElementById('slimeMode').value) > 0) {
+                    for (let conn of this.connections) {
+                        ctx.beginPath();
+                        ctx.moveTo(this.position.x, this.position.y);
+                        ctx.lineTo(conn.target.position.x, conn.target.position.y);
+                        
+                        // 根据距离和强度设置线条样式
+                        let lineAlpha = 0.3 * conn.strength * (1 - conn.distance / parseFloat(document.getElementById('connectionDistance').value));
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${lineAlpha})`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+                
+                // 绘制粒子主体
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+                
+                // 填充颜色
+                ctx.fillStyle = this.color.fill;
+                ctx.fill();
+                
+                // 绘制边框
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = this.color.stroke;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                // 根据生命值绘制内部状态
+                if (this.health < 0.7) {
+                    ctx.beginPath();
+                    ctx.arc(this.position.x, this.position.y, this.radius * 0.5, 0, Math.PI * 2);
+                    ctx.fillStyle = this.health < 0.3 ? '#ffffff' : '#ffcccc';
+                    ctx.fill();
+                }
+            }
+            
+            // 检查是否应该分裂
+            shouldSplit() {
+                if (this.health < 0.8) return false;
+                
+                let splitChance = parseFloat(document.getElementById('splitChance').value) / 100;
+                return Math.random() < splitChance;
+            }
+            
+            // 检查是否应该死亡
+            shouldDie() {
+                if (this.health <= 0) return true;
+                
+                let deathChance = parseFloat(document.getElementById('deathChance').value) / 100;
+                return Math.random() < deathChance;
+            }
+            
+            // 分裂粒子
+            split() {
+                let child = new Particle(
+                    this.position.x + (Math.random() - 0.5) * 10,
+                    this.position.y + (Math.random() - 0.5) * 10,
+                    this.colorType
+                );
+                
+                // 继承部分属性
+                child.velocity.x = this.velocity.x + (Math.random() - 0.5) * 2;
+                child.velocity.y = this.velocity.y + (Math.random() - 0.5) * 2;
+                child.health = 0.8;
+                child.age = 0;
+                
+                // 如果父粒子有文字目标，子粒子也继承
+                if (this.textTarget) {
+                    child.textTarget = { ...this.textTarget };
+                }
+                
+                return child;
+            }
+        }
+
+        // 文字成型系统
+        class TextFormation {
+            constructor() {
+                this.text = "";
+                this.points = [];
+                this.active = false;
+            }
+            
+            // 生成文字点阵
+            generateText(text) {
+                this.text = text;
+                this.points = [];
+                
+                // 清空Canvas并绘制文字以获取像素数据
+                let offscreenCanvas = document.createElement('canvas');
+                offscreenCanvas.width = canvas.width;
+                offscreenCanvas.height = canvas.height;
+                let offscreenCtx = offscreenCanvas.getContext('2d');
+                
+                // 绘制背景
+                offscreenCtx.fillStyle = '#000000';
+                offscreenCtx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                
+                // 绘制文字
+                offscreenCtx.font = 'bold 120px Arial';
+                offscreenCtx.fillStyle = '#ffffff';
+                offscreenCtx.textAlign = 'center';
+                offscreenCtx.textBaseline = 'middle';
+                offscreenCtx.fillText(text, offscreenCanvas.width / 2, offscreenCanvas.height / 2);
+                
+                // 获取像素数据
+                let imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                let data = imageData.data;
+                
+                // 采样点阵
+                let stride = 4; // 采样步长，控制点密度
+                for (let y = 0; y < offscreenCanvas.height; y += stride) {
+                    for (let x = 0; x < offscreenCanvas.width; x += stride) {
+                        let index = (y * offscreenCanvas.width + x) * 4;
+                        
+                        // 如果像素是白色（文字部分）
+                        if (data[index] > 200 && data[index + 1] > 200 && data[index + 2] > 200) {
+                            this.points.push({ x, y });
+                        }
+                    }
+                }
+                
+                // 如果没有足够的点，添加一些随机点
+                if (this.points.length < 100) {
+                    for (let i = 0; i < 100; i++) {
+                        this.points.push({
+                            x: Math.random() * offscreenCanvas.width,
+                            y: Math.random() * offscreenCanvas.height
+                        });
+                    }
+                }
+                
+                this.active = true;
+                return this.points;
+            }
+            
+            // 为粒子分配最近的目标点
+            assignTargets(particles) {
+                if (!this.active || this.points.length === 0) return;
+                
+                // 打乱点阵顺序以确保均匀分配
+                let shuffledPoints = [...this.points].sort(() => Math.random() - 0.5);
+                
+                // 为每个粒子分配一个目标点
+                for (let i = 0; i < Math.min(particles.length, shuffledPoints.length); i++) {
+                    particles[i].textTarget = shuffledPoints[i];
+                }
+            }
+            
+            // 绘制文字轮廓（调试用）
+            draw() {
+                if (!this.active || this.points.length === 0) return;
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                for (let point of this.points) {
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            // 清除文字目标
+            clear() {
+                this.active = false;
+                this.points = [];
+            }
+        }
+
+        // 初始化变量
+        let particles = [];
+        let animationId;
+        let mouseX = null;
+        let mouseY = null;
+        let mouseMode = 'attract';
+        let stats = {
+            splits: 0,
+            deaths: 0,
+            connections: 0,
+            lastFrameTime: 0,
+            fps: 60
+        };
+        
+        // 文字成型系统
+        const textFormation = new TextFormation();
+
+        // 初始化模拟
+        function initSimulation() {
+            // 清除现有粒子
+            particles = [];
+            
+            // 获取各群体数量
+            const redCount = parseInt(document.getElementById('redCount').value);
+            const greenCount = parseInt(document.getElementById('greenCount').value);
+            const blueCount = parseInt(document.getElementById('blueCount').value);
+            const yellowCount = parseInt(document.getElementById('yellowCount').value);
+            const purpleCount = parseInt(document.getElementById('purpleCount').value);
+            const cyanCount = parseInt(document.getElementById('cyanCount').value);
+            
+            // 创建粒子
+            createParticlesByColor(0, redCount);    // 红色
+            createParticlesByColor(1, greenCount);  // 绿色
+            createParticlesByColor(2, blueCount);   // 蓝色
+            createParticlesByColor(3, yellowCount); // 黄色
+            createParticlesByColor(4, purpleCount); // 紫色
+            createParticlesByColor(5, cyanCount);   // 青色
+            
+            // 更新统计显示
+            updateStats();
+            
+            // 如果文字成型系统是活动的，重新分配目标
+            if (textFormation.active) {
+                textFormation.assignTargets(particles);
+            }
+        }
+        
+        // 创建指定颜色的粒子
+        function createParticlesByColor(colorType, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height,
+                    colorType
+                ));
+            }
+        }
+        
+        // 更新所有粒子参数
+        function updateAllParticlesParameters() {
+            for (let particle of particles) {
+                particle.updateParameters();
+            }
+        }
+        
+        // 动画循环
+        function animate(currentTime) {
+            // 计算FPS
+            if (stats.lastFrameTime) {
+                let delta = currentTime - stats.lastFrameTime;
+                stats.fps = Math.round(1000 / delta);
+            }
+            stats.lastFrameTime = currentTime;
+            
+            // 清除画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制背景
+            drawBackground();
+            
+            // 重置连接统计
+            stats.connections = 0;
+            
+            // 应用鼠标影响
+            let mouseRadius = parseFloat(document.getElementById('mouseRadius').value);
+            let mouseStrength = parseFloat(document.getElementById('mouseStrength').value);
+            
+            // 更新并绘制所有粒子
+            let newParticles = [];
+            let deadParticles = [];
+            
+            for (let i = 0; i < particles.length; i++) {
+                let particle = particles[i];
+                
+                // 应用鼠标影响
+                particle.applyMouseForce(mouseX, mouseY, mouseMode, mouseRadius, mouseStrength);
+                
+                // 计算群体行为
+                particle.flock(particles);
+                
+                // 更新粒子
+                particle.update();
+                
+                // 检查是否应该分裂
+                if (particle.shouldSplit()) {
+                    let child = particle.split();
+                    newParticles.push(child);
+                    
+                    // 父粒子减少生命值
+                    particle.health *= 0.7;
+                    stats.splits++;
+                }
+                
+                // 检查是否应该死亡
+                if (particle.shouldDie()) {
+                    deadParticles.push(i);
+                    stats.deaths++;
+                } else {
+                    // 绘制存活的粒子
+                    particle.draw();
+                    
+                    // 统计连接数
+                    stats.connections += particle.connections.length;
+                }
+            }
+            
+            // 移除死亡的粒子
+            for (let i = deadParticles.length - 1; i >= 0; i--) {
+                particles.splice(deadParticles[i], 1);
+            }
+            
+            // 添加新粒子
+            particles.push(...newParticles);
+            
+            // 绘制文字轮廓（调试）
+            textFormation.draw();
+            
+            // 更新统计信息
+            updateStats();
+            
+            // 继续动画循环
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // 绘制背景
+        function drawBackground() {
+            // 渐变背景
+            let gradient = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, 0,
+                canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2
+            );
+            gradient.addColorStop(0, 'rgba(10, 10, 10, 0.1)');
+            gradient.addColorStop(1, 'rgba(26, 26, 46, 0.3)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 网格
+            ctx.strokeStyle = 'rgba(100, 116, 139, 0.05)';
+            ctx.lineWidth = 1;
+            
+            // 垂直线
+            for (let x = 0; x < canvas.width; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            // 水平线
+            for (let y = 0; y < canvas.height; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+        
+        // 更新数值显示
+        function updateValueDisplays() {
+            // 群体数量
+            document.getElementById('redCountValue').textContent = 
+                document.getElementById('redCount').value;
+            document.getElementById('greenCountValue').textContent = 
+                document.getElementById('greenCount').value;
+            document.getElementById('blueCountValue').textContent = 
+                document.getElementById('blueCount').value;
+            document.getElementById('yellowCountValue').textContent = 
+                document.getElementById('yellowCount').value;
+            document.getElementById('purpleCountValue').textContent = 
+                document.getElementById('purpleCount').value;
+            document.getElementById('cyanCountValue').textContent = 
+                document.getElementById('cyanCount').value;
+            
+            // 全局参数
+            document.getElementById('maxSpeedValue').textContent = 
+                parseFloat(document.getElementById('maxSpeed').value).toFixed(1);
+            document.getElementById('perceptionRadiusValue').textContent = 
+                document.getElementById('perceptionRadius').value;
+            document.getElementById('boundaryBounceValue').textContent = 
+                parseFloat(document.getElementById('boundaryBounce').value).toFixed(1);
+            
+            // 细菌行为
+            document.getElementById('splitChanceValue').textContent = 
+                parseFloat(document.getElementById('splitChance').value).toFixed(1) + '%';
+            document.getElementById('deathChanceValue').textContent = 
+                parseFloat(document.getElementById('deathChance').value).toFixed(1) + '%';
+            document.getElementById('maxLifespanValue').textContent = 
+                document.getElementById('maxLifespan').value;
+            
+            // 黏菌模拟
+            document.getElementById('slimeModeValue').textContent = 
+                parseFloat(document.getElementById('slimeMode').value).toFixed(0) + '%';
+            document.getElementById('connectionDistanceValue').textContent = 
+                document.getElementById('connectionDistance').value;
+            document.getElementById('connectionStrengthValue').textContent = 
+                parseFloat(document.getElementById('connectionStrength').value).toFixed(1);
+            
+            // 鼠标控制
+            document.getElementById('mouseRadiusValue').textContent = 
+                document.getElementById('mouseRadius').value;
+            document.getElementById('mouseStrengthValue').textContent = 
+                parseFloat(document.getElementById('mouseStrength').value).toFixed(1);
+            
+            // 文字成型
+            document.getElementById('textAttractionValue').textContent = 
+                parseFloat(document.getElementById('textAttraction').value).toFixed(1);
+            document.getElementById('textRetentionValue').textContent = 
+                parseFloat(document.getElementById('textRetention').value).toFixed(1);
+        }
+        
+        // 更新统计信息
+        function updateStats() {
+            document.getElementById('totalParticles').textContent = particles.length;
+            document.getElementById('fpsCounter').textContent = stats.fps;
+            document.getElementById('connectionsCount').textContent = Math.floor(stats.connections / 2); // 每个连接被计算两次
+            document.getElementById('splitCount').textContent = stats.splits;
+            document.getElementById('deathCount').textContent = stats.deaths;
+            
+            let slimeValue = parseFloat(document.getElementById('slimeMode').value);
+            document.getElementById('slimeActive').textContent = slimeValue > 0 ? '开' : '关';
+        }
+        
+        // 重置参数到默认值
+        function resetParameters() {
+            // 群体数量
+            document.getElementById('redCount').value = 50;
+            document.getElementById('greenCount').value = 50;
+            document.getElementById('blueCount').value = 50;
+            document.getElementById('yellowCount').value = 50;
+            document.getElementById('purpleCount').value = 50;
+            document.getElementById('cyanCount').value = 50;
+            
+            // 全局参数
+            document.getElementById('maxSpeed').value = 4;
+            document.getElementById('perceptionRadius').value = 80;
+            document.getElementById('boundaryBounce').value = 0.8;
+            
+            // 细菌行为
+            document.getElementById('splitChance').value = 0.5;
+            document.getElementById('deathChance').value = 0.2;
+            document.getElementById('maxLifespan').value = 800;
+            
+            // 黏菌模拟
+            document.getElementById('slimeMode').value = 0;
+            document.getElementById('connectionDistance').value = 40;
+            document.getElementById('connectionStrength').value = 0.3;
+            
+            // 鼠标控制
+            document.getElementById('mouseRadius').value = 100;
+            document.getElementById('mouseStrength').value = 2;
+            
+            // 文字成型
+            document.getElementById('textAttraction').value = 0.8;
+            document.getElementById('textRetention').value = 0.5;
+            document.getElementById('textInput').value = "Boids";
+            
+            updateValueDisplays();
+            updateAllParticlesParameters();
+            initSimulation();
+            stats.splits = 0;
+            stats.deaths = 0;
+        }
+        
+        // 随机化参数
+        function randomizeParameters() {
+            // 群体数量
+            document.getElementById('redCount').value = Math.floor(Math.random() * 150) + 30;
+            document.getElementById('greenCount').value = Math.floor(Math.random() * 150) + 30;
+            document.getElementById('blueCount').value = Math.floor(Math.random() * 150) + 30;
+            document.getElementById('yellowCount').value = Math.floor(Math.random() * 150) + 30;
+            document.getElementById('purpleCount').value = Math.floor(Math.random() * 150) + 30;
+            document.getElementById('cyanCount').value = Math.floor(Math.random() * 150) + 30;
+            
+            // 全局参数
+            document.getElementById('maxSpeed').value = (Math.random() * 7 + 2).toFixed(1);
+            document.getElementById('perceptionRadius').value = Math.floor(Math.random() * 100) + 40;
+            document.getElementById('boundaryBounce').value = (Math.random() * 0.7 + 0.3).toFixed(1);
+            
+            // 细菌行为
+            document.getElementById('splitChance').value = (Math.random() * 3).toFixed(1);
+            document.getElementById('deathChance').value = (Math.random() * 2).toFixed(1);
+            document.getElementById('maxLifespan').value = Math.floor(Math.random() * 1500) + 300;
+            
+            // 黏菌模拟
+            document.getElementById('slimeMode').value = Math.random() > 0.5 ? 100 : 0;
+            document.getElementById('connectionDistance').value = Math.floor(Math.random() * 70) + 20;
+            document.getElementById('connectionStrength').value = (Math.random() * 0.7 + 0.1).toFixed(1);
+            
+            updateValueDisplays();
+            updateAllParticlesParameters();
+            initSimulation();
+        }
+        
+        // 切换黏菌模式
+        function toggleSlimeMode() {
+            let currentValue = parseFloat(document.getElementById('slimeMode').value);
+            document.getElementById('slimeMode').value = currentValue > 0 ? 0 : 100;
+            updateValueDisplays();
+        }
+        
+        // 应用文字成型
+        function applyTextFormation() {
+            let text = document.getElementById('textInput').value.trim();
+            if (text) {
+                textFormation.generateText(text);
+                textFormation.assignTargets(particles);
+            }
+        }
+        
+        // 初始化事件监听器
+        function initEventListeners() {
+            // 为所有滑块添加事件监听
+            const sliders = document.querySelectorAll('input[type="range"]');
+            sliders.forEach(slider => {
+                slider.addEventListener('input', function() {
+                    updateValueDisplays();
+                    
+                    // 如果是群体数量滑块，重新初始化模拟
+                    if (this.id.includes('Count')) {
+                        initSimulation();
+                    } else {
+                        // 否则只更新参数
+                        updateAllParticlesParameters();
+                    }
+                });
+            });
+            
+            // 鼠标移动事件
+            canvas.addEventListener('mousemove', function(event) {
+                const rect = canvas.getBoundingClientRect();
+                mouseX = event.clientX - rect.left;
+                mouseY = event.clientY - rect.top;
+            });
+            
+            canvas.addEventListener('mouseleave', function() {
+                mouseX = null;
+                mouseY = null;
+            });
+            
+            // 鼠标模式选择
+            document.querySelectorAll('.mouse-mode').forEach(mode => {
+                mode.addEventListener('click', function() {
+                    // 移除所有active类
+                    document.querySelectorAll('.mouse-mode').forEach(m => {
+                        m.classList.remove('active');
+                    });
+                    
+                    // 添加active类到当前模式
+                    this.classList.add('active');
+                    
+                    // 更新鼠标模式
+                    mouseMode = this.getAttribute('data-mode');
+                    document.getElementById('currentMouseMode').textContent = 
+                        this.querySelector('div').textContent;
+                });
+            });
+            
+            // 重置按钮
+            document.getElementById('resetBtn').addEventListener('click', resetParameters);
+            
+            // 随机化按钮
+            document.getElementById('randomizeBtn').addEventListener('click', randomizeParameters);
+            
+            // 黏菌模式按钮
+            document.getElementById('toggleSlimeBtn').addEventListener('click', toggleSlimeMode);
+            
+            // 文字成型按钮
+            document.getElementById('textFormBtn').addEventListener('click', applyTextFormation);
+            
+            // 文字输入框回车事件
+            document.getElementById('textInput').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    applyTextFormation();
+                }
+            });
+            
+            // 窗口大小变化时调整canvas大小
+            window.addEventListener('resize', function() {
+                // 保持canvas的宽高比例
+                const container = document.querySelector('.canvas-container');
+                canvas.width = container.clientWidth;
+                canvas.height = Math.min(container.clientWidth * 0.7, 700);
+                
+                // 如果文字成型系统是活动的，重新生成
+                if (textFormation.active) {
+                    textFormation.generateText(textFormation.text);
+                    textFormation.assignTargets(particles);
+                }
+            });
+        }
+        
+        // 启动模拟
+        function startSimulation() {
+            // 初始化事件监听器
+            initEventListeners();
+            
+            // 初始化数值显示
+            updateValueDisplays();
+            
+            // 初始化粒子
+            initSimulation();
+            
+            // 初始文字成型
+            applyTextFormation();
+            
+            // 开始动画循环
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // 页面加载完成后启动模拟
+        window.addEventListener('load', startSimulation);
+    </script>
+</body>
+</html>
